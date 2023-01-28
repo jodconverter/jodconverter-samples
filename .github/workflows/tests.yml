@@ -30,7 +30,7 @@ jobs:
       - name: Build and test WEBAPP example
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: :samples:spring-boot-rest:test
+          arguments: :samples:spring-boot-webapp:test
       - name: Report
         uses: dorny/test-reporter@v1.6.0
         if: always()
