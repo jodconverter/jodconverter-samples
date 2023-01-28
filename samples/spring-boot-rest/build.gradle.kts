@@ -1,39 +1,28 @@
 plugins {
     id("java")
     id("war")
-    id("org.springframework.boot") version "3.0.2"
+    id("org.springframework.boot") version Versions.springBoot
 }
 
 description = "Sample Spring Boot Rest Api"
 
-val jodcVersion by extra { "4.4.6-SNAPSHOT" }
-// https://search.maven.org/artifact/org.springframework.boot/spring-boot
-val springBootVersion by extra { "3.0.2" }
-// https://search.maven.org/artifact/commons-io/commons-io
-val commonsIoVersion by extra { "2.11.0" }
-// https://search.maven.org/artifact/io.swagger.core.v3/swagger-project
-val swaggerVersion by extra { "2.2.8" }
-// https://search.maven.org/artifact/org.springdoc/springdoc-openapi-ui
-val openapiVersion by extra { "2.0.2" }
-
 repositories {
     mavenCentral()
-    maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
 }
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion"))
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:${Versions.springBoot}"))
 
-    implementation("org.jodconverter:jodconverter-local-lo:$jodcVersion")
-    implementation("org.jodconverter:jodconverter-spring-boot-starter:$jodcVersion")
+    implementation("org.jodconverter:jodconverter-local-lo:${Versions.Dependencies.jodConverter}")
+    implementation("org.jodconverter:jodconverter-spring-boot-starter:${Versions.Dependencies.jodConverter}")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
 
-    implementation("commons-io:commons-io:$commonsIoVersion")
+    implementation("commons-io:commons-io:${Versions.Dependencies.commonsIo}")
     implementation("org.glassfish.jaxb:jaxb-runtime")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$openapiVersion")
-    implementation("io.swagger.core.v3:swagger-annotations:$swaggerVersion")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${Versions.Dependencies.openApi}")
+    implementation("io.swagger.core.v3:swagger-annotations:${Versions.Dependencies.swagger}")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-api")
@@ -42,8 +31,8 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = Versions.jvm
+    targetCompatibility = Versions.jvm
 }
 
 tasks.getByName<Test>("test") {

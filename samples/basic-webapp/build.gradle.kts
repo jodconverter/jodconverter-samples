@@ -1,47 +1,32 @@
 plugins {
     id("java")
     id("war")
-
-    // https://plugins.gradle.org/plugin/com.bmuschko.tomcat
-    id("com.bmuschko.tomcat") version "2.7.0"
+    id("com.bmuschko.tomcat") version Versions.Plugins.bmuschkoTomcat
 }
 
 description = "Sample Web Application"
 
-val jodcVersion by extra { "4.4.6-SNAPSHOT" }
-// https://search.maven.org/artifact/org.slf4j/slf4j-api
-val slf4jVersion by extra { "2.0.6" }
-// https://search.maven.org/artifact/commons-fileupload/commons-fileupload
-val commonsFileUploadVersion by extra { "1.4" }
-// https://search.maven.org/artifact/javax.servlet/javax.servlet-api
-val servletApiVersion by extra { "4.0.1" }
-// https://search.maven.org/artifact/org.apache.tomcat.embed/tomcat-embed-core
-// We can't use 9.0.31+ until this is resolved:
-// https://github.com/bmuschko/gradle-tomcat-plugin/pull/209
-val tomcatVersion by extra { "9.0.30" }
-
 repositories {
     mavenCentral()
-    maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
 }
 
 dependencies {
-    implementation("org.jodconverter:jodconverter-local-lo:$jodcVersion")
+    implementation("org.jodconverter:jodconverter-local-lo:${Versions.Dependencies.jodConverter}")
 
-    implementation("commons-fileupload:commons-fileupload:$commonsFileUploadVersion")
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
+    implementation("commons-fileupload:commons-fileupload:${Versions.Dependencies.commonsFileUpload}")
+    implementation("org.slf4j:slf4j-api:${Versions.Dependencies.slf4j}")
 
-    compileOnly("javax.servlet:javax.servlet-api:$servletApiVersion")
+    compileOnly("javax.servlet:javax.servlet-api:${Versions.Dependencies.servletApi}")
 
-    runtimeOnly("org.slf4j:slf4j-log4j12:$slf4jVersion")
+    runtimeOnly("org.slf4j:slf4j-log4j12:${Versions.Dependencies.slf4j}")
 
-    tomcat("org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion")
-    tomcat("org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion")
+    tomcat("org.apache.tomcat.embed:tomcat-embed-core:${Versions.Dependencies.tomcat}")
+    tomcat("org.apache.tomcat.embed:tomcat-embed-jasper:${Versions.Dependencies.tomcat}")
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = Versions.jvm
+    targetCompatibility = Versions.jvm
 }
 
 tomcat {
