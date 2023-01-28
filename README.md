@@ -40,3 +40,5 @@ docker run --rm -p 8080:8080 ghcr.io/jodconverter/jodconverter-examples:rest
 ```
 
 You can access the apps via `http://localhost:8080`
+
+The docker images are build in [jodconverter/docker-image-jodconverter-examples](https://github.com/jodconverter/docker-image-jodconverter-examples). Use them as a starting point for an application, if you like.
