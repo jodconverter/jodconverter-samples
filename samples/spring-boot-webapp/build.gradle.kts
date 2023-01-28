@@ -28,6 +28,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-devtools")
 
     implementation("commons-io:commons-io:$commonsIoVersion")
+
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
 }
 
 java {
