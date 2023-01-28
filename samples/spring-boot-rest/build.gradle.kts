@@ -35,23 +35,21 @@ java {
     targetCompatibility = Versions.jvm
 }
 
+// If you experience connection issue on Windows 10, you may have to set a project property
+// pointing to a templateProfileDir where OpenGL is disabled by default. This must be done
+// for the Test and BootRun tasks.
+// Read here to know how to disable OpenGL:
+// https://wiki.documentfoundation.org/OpenGL#:~:text=LibreOffice%205.3%20and%20newer%3A,Click%20%22Apply%20Changes%20and%20Restart%22
+
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
 
-    // If you experience connection issue on Windows 10, you may have to set a project property
-    // pointing to a templateProfileDir where OpenGL is disabled by default. Read here to know
-    // how to disable OpenGL:
-    // https://wiki.documentfoundation.org/OpenGL#:~:text=LibreOffice%205.3%20and%20newer%3A,Click%20%22Apply%20Changes%20and%20Restart%22
     project.findProperty("org.jodconverter.local.manager.templateProfileDir")?.let {
         systemProperty("org.jodconverter.local.manager.templateProfileDir", it)
     }
 }
 
 tasks.bootRun {
-    // If you experience connection issue on Windows 10, you may have to set a project property
-    // pointing to a templateProfileDir where OpenGL is disabled by default. Read here to know
-    // how to disable OpenGL:
-    // https://wiki.documentfoundation.org/OpenGL#:~:text=LibreOffice%205.3%20and%20newer%3A,Click%20%22Apply%20Changes%20and%20Restart%22
     project.findProperty("org.jodconverter.local.manager.templateProfileDir")?.let {
         systemProperty("org.jodconverter.local.manager.templateProfileDir", it)
     }
