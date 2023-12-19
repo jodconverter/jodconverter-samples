@@ -132,11 +132,11 @@ public class ConverterController {
   }
 
   private void addProperty(
-      final String paramName,
+      final String prefix,
       final Map.Entry<String, String> param,
       final Map<String, Object> properties) {
 
-    final String name = param.getKey().substring(paramName.length());
+    final String name = param.getKey().substring(prefix.length());
     final String value = param.getValue();
 
     if ("true".equalsIgnoreCase(value)) {
@@ -159,7 +159,7 @@ public class ConverterController {
       final Map.Entry<String, String> param,
       final Map<String, Object> properties) {
     if (key.startsWith(prefix)) {
-      addProperty(key, param, properties);
+      addProperty(prefix, param, properties);
     }
   }
 
