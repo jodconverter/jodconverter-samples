@@ -4,6 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import org.jodconverter.core.DocumentConverter;
 import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
 import org.jodconverter.core.document.DocumentFormat;
@@ -25,12 +30,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Controller that will process conversion requests. The mapping is the same as LibreOffice Online
@@ -153,14 +152,16 @@ public class ConverterController {
     }
   }
 
-  private void addProperty(
+  private boolean addProperty(
       final String key,
       final String prefix,
       final Map.Entry<String, String> param,
       final Map<String, Object> properties) {
     if (key.startsWith(prefix)) {
       addProperty(prefix, param, properties);
+      return true;
     }
+    return false;
   }
 
   private void decodeParameters(
@@ -176,10 +177,18 @@ public class ConverterController {
     final Map<String, Object> storeFilterDataProperties = new HashMap<>();
     for (final Map.Entry<String, String> param : parameters.entrySet()) {
       final String key = param.getKey().toLowerCase(Locale.ROOT);
-      addProperty(key, LOAD_FILTER_DATA_PREFIX_PARAM, param, loadFilterDataProperties);
-      addProperty(key, LOAD_PROPERTIES_PREFIX_PARAM, param, loadProperties);
-      addProperty(key, STORE_FILTER_DATA_PREFIX_PARAM, param, storeFilterDataProperties);
-      addProperty(key, STORE_PROPERTIES_PREFIX_PARAM, param, storeProperties);
+      if (addProperty(key, LOAD_FILTER_DATA_PREFIX_PARAM, param, loadFilterDataProperties)) {
+        break;
+      }
+      if (addProperty(key, LOAD_PROPERTIES_PREFIX_PARAM, param, loadProperties))  {
+        break;
+      }
+      if (addProperty(key, STORE_FILTER_DATA_PREFIX_PARAM, param, storeFilterDataProperties))  {
+        break;
+      }
+      if (addProperty(key, STORE_PROPERTIES_PREFIX_PARAM, param, storeProperties))  {
+        break;
+      }
     }
 
     if (!loadFilterDataProperties.isEmpty()) {
