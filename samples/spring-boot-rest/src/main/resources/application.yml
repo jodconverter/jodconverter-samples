@@ -1,6 +1,6 @@
 server:
   port: 8080
-  
+
 spring:
   servlet:
     multipart:
@@ -23,7 +23,10 @@ jodconverter:
   local:
     enabled: true
     port-numbers: 2002,2003
-    format-options:
+  # Since JODConverter 5.0, the options of the document formats are set once, for every converter
+  # (they were under jodconverter.local.format-options).
+  document-formats:
+    options:
       html:
         store:
           TEXT:

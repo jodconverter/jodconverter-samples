@@ -6,7 +6,7 @@ object Versions {
 
     //  Latest Version:
     //  Visit https://central.sonatype.com and search for: g:org.springframework.boot a:spring-boot
-    const val springBoot = "3.2.0"
+    const val springBoot = "4.1.1"
 
     object Plugins {
 
@@ -18,7 +18,7 @@ object Versions {
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:org.jodconverter a:jodconverter-core
-        const val jodConverter = "4.4.7"
+        const val jodConverter = "5.1.0"
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:commons-fileupload a:commons-fileupload
@@ -26,11 +26,11 @@ object Versions {
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:commons-io a:commons-io
-        const val commonsIo = "2.15.1"
+        const val commonsIo = "2.22.0"
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:org.springdoc a:springdoc-openapi-starter-webmvc-ui
-        const val openApi = "2.3.0"
+        const val openApi = "3.1.1"
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:javax.servlet a:javax.servlet-api
@@ -38,11 +38,11 @@ object Versions {
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:org.slf4j a:slf4j-api
-        const val slf4j = "2.0.9"
+        const val slf4j = "2.0.20"
 
         //  Latest Version:
         //  Visit https://central.sonatype.com and search for: g:io.swagger.core.v3 a:swagger-project
-        const val swagger = "2.2.20"
+        const val swagger = "2.2.55"
 
         // https://search.maven.org/artifact/org.apache.tomcat.embed/tomcat-embed-core
         // We can't use 9.0.31+ until this is resolved:

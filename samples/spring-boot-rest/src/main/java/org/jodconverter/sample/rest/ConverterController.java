@@ -5,8 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.jodconverter.core.DocumentConverter;
-import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
 import org.jodconverter.core.document.DocumentFormat;
+import org.jodconverter.core.document.DocumentFormatRegistry;
 import org.jodconverter.core.office.OfficeException;
 import org.jodconverter.core.office.OfficeManager;
 import org.jodconverter.core.util.FileUtils;
@@ -45,6 +45,7 @@ public class ConverterController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConverterController.class);
 
     private final OfficeManager officeManager;
+    private final DocumentFormatRegistry formatRegistry;
 
     @Autowired
     private ParameterDecoder parameterDecoder;
@@ -53,11 +54,15 @@ public class ConverterController {
      * Creates a new controller.
      *
      * @param officeManager The manager used to execute conversions.
+     * @param formatRegistry The registry of the document formats, with the options of the
+     *     jodconverter.document-formats properties.
      */
-    public ConverterController(final OfficeManager officeManager) {
+    public ConverterController(
+            final OfficeManager officeManager, final DocumentFormatRegistry formatRegistry) {
         super();
 
         this.officeManager = officeManager;
+        this.formatRegistry = formatRegistry;
     }
 
     @Operation(
@@ -136,7 +141,7 @@ public class ConverterController {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
             final DocumentFormat targetFormat =
-                    DefaultDocumentFormatRegistry.getFormatByExtension(outputFormat);
+                    formatRegistry.getFormatByExtension(outputFormat);
             Assert.notNull(targetFormat, "targetFormat must not be null");
 
             // Decode the parameters to load and store properties.
@@ -149,6 +154,7 @@ public class ConverterController {
             final DocumentConverter converter =
                     LocalConverter.builder()
                             .officeManager(officeManager)
+                            .formatRegistry(formatRegistry)
                             .loadProperties(loadProperties)
                             .storeProperties(storeProperties)
                             .build();

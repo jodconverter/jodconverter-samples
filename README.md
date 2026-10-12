@@ -13,6 +13,10 @@ The projects in this directory demonstrate typical use cases using the JODConver
 - [`samples/spring-boot-rest`](./samples//spring-boot-rest): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a REST API supporting document conversions.
 - [`samples/spring-boot-webapp`](./samples//spring-boot-webapp): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a web application with thymeleaf and bootstrap.
 
+## Requirements
+
+The samples use JODConverter 5.1, which needs Java 17 or later; the two Spring Boot samples use Spring Boot 4. LibreOffice (or Apache OpenOffice) must be installed.
+
 ## Build and run
 
 See the subprojects. In short
