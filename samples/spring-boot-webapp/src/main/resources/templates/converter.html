@@ -8,7 +8,7 @@
 
 </head>
 
-<body th:attr="onload=${errorMessage != null &amp;&amp; errorMessage != ''} ? 'showError(\'__${errorMessage}__\')' : null">
+<body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand" href="https://github.com/jodconverter/jodconverter">JODConverter</a>
@@ -29,7 +29,15 @@
 
     <hr class="mb-4"/>
 
-    <div id="errorMessage"></div>
+    <!-- The message of the server is written by Thymeleaf as text (th:text escapes it): it holds the
+         name of the uploaded file, which must never reach the page as HTML or as script. -->
+    <div id="errorMessage">
+        <div th:if="${errorMessage != null and errorMessage != ''}"
+             class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
 
     <div class="card">
         <h4 class="card-header">Convert Documents</h4>
@@ -44,10 +52,52 @@
 
                 <div class="mb-3">
                     <label for="outputFormat" class="form-label">Convert as type</label>
-                    <select id="outputFormat" name="outputFormat" class="form-select" disabled>
+                    <select id="outputFormat" name="outputFormat" class="form-select" disabled onchange="onOutputFormatChange()">
                         <option>Choose type</option>
                     </select>
                 </div>
+
+                <details class="mb-3">
+                    <summary class="mb-3">Options</summary>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password of the document</label>
+                        <input id="password" name="password" class="form-control" type="password" autocomplete="off">
+                        <div class="form-text">Only for a document that is protected by a password.</div>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input id="landscape" name="landscape" class="form-check-input" type="checkbox" value="true">
+                        <label for="landscape" class="form-check-label">Landscape pages</label>
+                        <div class="form-text">Text documents and spreadsheets.</div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input id="removeHeaderFooter" name="removeHeaderFooter" class="form-check-input" type="checkbox" value="true">
+                        <label for="removeHeaderFooter" class="form-check-label">Remove the page header and footer</label>
+                        <div class="form-text">For a CSV file, the name of the sheet at the top of each page and "Page 1" at the bottom.</div>
+                    </div>
+
+                    <!-- Enabled by converter.js when the output is a PDF document. -->
+                    <fieldset id="pdfOptions" disabled>
+                        <legend class="h6">PDF options</legend>
+
+                        <div class="mb-3">
+                            <label for="pdfPreset" class="form-label">Kind of PDF</label>
+                            <select id="pdfPreset" name="pdfPreset" class="form-select">
+                                <option value="">As the office is configured</option>
+                                <option value="archive">Archive (PDF/A-2b)</option>
+                                <option value="accessible">Accessible (PDF/UA)</option>
+                                <option value="compact">Compact (compressed images)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="pageRange" class="form-label">Pages</label>
+                            <input id="pageRange" name="pageRange" class="form-control" type="text" placeholder="All, or for example 1-3;7">
+                        </div>
+                    </fieldset>
+                </details>
 
                 <button id="formGo" type="submit" class="btn btn-primary" disabled>Convert!</button>
 

@@ -3,17 +3,26 @@ function dismissError() {
     errorDiv.replaceChildren();
 }
 
+// Shows a message as text: it may hold the name of the chosen file, which must not be read as
+// HTML.
 function showError(errorMessage) {
 
     if (errorMessage) {
-        const alert =
-            '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-            `<strong>Error!</strong> ${errorMessage}` +
-            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-            '</div>'
-        // Replace current HTML of the error message div
-        const errorDiv = document.getElementById("errorMessage")
-        errorDiv.innerHTML = alert;
+        const alert = document.createElement("div");
+        alert.className = "alert alert-danger alert-dismissible fade show";
+        alert.setAttribute("role", "alert");
+
+        const title = document.createElement("strong");
+        title.textContent = "Error!";
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "btn-close";
+        close.setAttribute("data-bs-dismiss", "alert");
+        close.setAttribute("aria-label", "Close");
+        alert.append(title, " " + errorMessage, close);
+
+        // Replace the current content of the error message div
+        document.getElementById("errorMessage").replaceChildren(alert);
     } else {
         // Remove older message from the error message div
         dismissError();
@@ -22,6 +31,12 @@ function showError(errorMessage) {
 
 function setElementDisabled(eltId, disabled) {
     document.getElementById(eltId).disabled = disabled;
+}
+
+// The PDF options are sent only when the output is a PDF document: the fields of a disabled
+// fieldset are not part of the form.
+function onOutputFormatChange() {
+    setElementDisabled("pdfOptions", document.getElementById("outputFormat").value !== "pdf");
 }
 
 function onInputFileChange() {
@@ -40,6 +55,7 @@ function onInputFileChange() {
     if (ext === undefined) {
         setElementDisabled("outputFormat", true);
         setElementDisabled("formGo", true);
+        setElementDisabled("pdfOptions", true);
         showError("No extension found in the source file name.");
         return false;
     }
@@ -51,7 +67,8 @@ function onInputFileChange() {
     if (family === undefined) {
         setElementDisabled("outputFormat", true);
         setElementDisabled("formGo", true);
-        showError("Conversion from extension <b>" + ext + "</b> is not supported.");
+        setElementDisabled("pdfOptions", true);
+        showError("Conversion from extension " + ext + " is not supported.");
         return false;
     }
 
@@ -72,4 +89,5 @@ function onInputFileChange() {
 
     setElementDisabled("outputFormat", false);
     setElementDisabled("formGo", false);
+    onOutputFormatChange();
 }
