@@ -44,6 +44,22 @@ Two load properties cannot be set by a request, which answers 400 when one is gi
 
 When a conversion fails, the answer is a short message; the details are in the log of the application.
 
+### Password and description of the office
+
+A `password` parameter opens a protected document; without it, or with a wrong one, the answer says so:
+
+```
+POST http://localhost:8080/lool/convert-to/pdf?password=secret
+```
+
+The name and the version of the office that converts the documents, and its import and export filters, are at:
+
+```
+http://localhost:8080/info
+```
+
+This is the `OfficeInfoTask` of JODConverter. The application asks the office once and keeps the answer.
+
 ### State of the office processes
 
 The sample includes Spring Boot Actuator, with which the JODConverter starter reports the state of the office processes:

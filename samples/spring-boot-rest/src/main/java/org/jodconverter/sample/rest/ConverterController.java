@@ -7,11 +7,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.jodconverter.core.DocumentConverter;
 import org.jodconverter.core.document.DocumentFormat;
 import org.jodconverter.core.document.DocumentFormatRegistry;
+import org.jodconverter.core.job.ConversionJob;
+import org.jodconverter.core.job.ConversionJobWithOptionalSourceFormatUnspecified;
 import org.jodconverter.core.office.OfficeException;
 import org.jodconverter.core.office.OfficeManager;
 import org.jodconverter.core.util.FileUtils;
 import org.jodconverter.core.util.StringUtils;
 import org.jodconverter.local.LocalConverter;
+import org.jodconverter.local.office.PasswordProtectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,11 +99,13 @@ public class ConverterController {
                     description = "The document format to convert the input document to.",
                     required = true)
             @RequestParam(name = "format") final String convertToFormat,
+            @Parameter(description = "The password of the input document, when it is protected.")
+            @RequestParam(name = "password", required = false) final String password,
             @Parameter(description = "The custom options to apply to the conversion.")
             @RequestParam(required = false) final Map<String, String> parameters) {
 
         LOGGER.debug("convertUsingRequestParam > Converting file to {}", convertToFormat);
-        return convert(inputFile, convertToFormat, parameters);
+        return convert(inputFile, convertToFormat, password, parameters);
     }
 
     @Operation(
@@ -128,16 +133,19 @@ public class ConverterController {
                     description = "The document format to convert the input document to.",
                     required = true)
             @PathVariable(name = "format") final String convertToFormat,
+            @Parameter(description = "The password of the input document, when it is protected.")
+            @RequestParam(name = "password", required = false) final String password,
             @Parameter(description = "The custom options to apply to the conversion.")
             @RequestParam(required = false) final Map<String, String> parameters) {
 
         LOGGER.debug("convertUsingPathVariable > Converting file to {}", convertToFormat);
-        return convert(inputFile, convertToFormat, parameters);
+        return convert(inputFile, convertToFormat, password, parameters);
     }
 
     private ResponseEntity<Object> convert(
             final MultipartFile inputFile,
             final String outputFormat,
+            final String password,
             final Map<String, String> parameters) {
 
         if (inputFile.isEmpty()) {
@@ -182,8 +190,27 @@ public class ConverterController {
                             .storeProperties(storeProperties)
                             .build();
 
-            // Convert...
-            converter.convert(inputFile.getInputStream()).to(baos).as(targetFormat).execute();
+            // Convert, with the password of the document if one was given. Without it, the
+            // conversion of a protected document fails with a PasswordProtectedException.
+            // The format of the input comes from its name. A stream has no name: without
+            // the format the office guesses from the content, and takes a CSV file for a text,
+            // not for a spreadsheet. When the extension is unknown, the office is left to guess.
+            final ConversionJobWithOptionalSourceFormatUnspecified source =
+                    converter.convert(inputFile.getInputStream());
+            final String extension =
+                    FileUtils.getExtension(String.valueOf(inputFile.getOriginalFilename()));
+            final DocumentFormat sourceFormat =
+                    StringUtils.isBlank(extension)
+                            ? null
+                            : formatRegistry.getFormatByExtension(extension);
+            ConversionJob job =
+                    (sourceFormat == null ? source : source.as(sourceFormat))
+                            .to(baos)
+                            .as(targetFormat);
+            if (StringUtils.isNotBlank(password)) {
+                job = job.password(password);
+            }
+            job.execute();
 
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(targetFormat.getMediaType()));
@@ -201,12 +228,27 @@ public class ConverterController {
             return ResponseEntity.ok().headers(headers).body(baos.toByteArray());
 
         } catch (OfficeException | IOException ex) {
+            // A password that is missing or wrong is the caller's to fix: say which.
+            for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+                if (cause instanceof PasswordProtectedException) {
+                    return badRequest(
+                            String.valueOf(cause.getMessage()).startsWith("Wrong password")
+                                    ? "The password is not the one of the document."
+                                    : "The document is protected: give its password.");
+                }
+            }
             // The details go to the log, not to the caller: an exception may tell paths and
             // other internals of the server.
             LOGGER.error("Could not convert {}", inputFile.getOriginalFilename(), ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.TEXT_PLAIN)
-                    .body("The document could not be converted.");
+                    .body(
+                            // The office does not always say that a password is wrong: with
+                            // some documents it only fails to open them.
+                            StringUtils.isNotBlank(password)
+                                    ? "The document could not be converted."
+                                            + " If it is protected, check its password."
+                                    : "The document could not be converted.");
         }
     }
 

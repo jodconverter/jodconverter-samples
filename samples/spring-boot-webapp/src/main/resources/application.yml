@@ -1,5 +1,11 @@
 server:
   port: 8080
+  servlet:
+    session:
+      # The session, which carries the error message to the page after a redirection, is kept in
+      # a cookie only. Otherwise the first redirection of a visitor has the session id in its
+      # URL (/;jsessionid=...), which the application does not serve: a 404 instead of the message.
+      tracking-modes: cookie
 
 spring:
   servlet:
@@ -12,6 +18,11 @@ spring:
 jodconverter:
   local:
     enabled: true
+  # The default PDF options of the converter that the starter creates (jodconverter.pdf.*). A
+  # conversion can still give its own, as the "PDF options" of the page do. Here: every PDF is
+  # tagged, which the office stops doing as soon as another option is set.
+  pdf:
+    tagged: true
   # Since JODConverter 5.0, the options of the document formats are set once, for every converter
   # (they were under jodconverter.local.format-options).
   document-formats:

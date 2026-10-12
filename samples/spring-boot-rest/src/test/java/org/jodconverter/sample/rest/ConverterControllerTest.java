@@ -2,6 +2,8 @@ package org.jodconverter.sample.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -9,7 +11,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
+import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
+import org.jodconverter.core.office.OfficeManager;
+import org.jodconverter.local.LocalConverter;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -22,28 +28,39 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 class ConverterControllerTest {
 
   private static final String BOUNDARY = "----ConverterControllerTest";
+  private static final byte[] TEXT = "Hello from the sample test".getBytes(StandardCharsets.UTF_8);
 
   private final HttpClient client = HttpClient.newHttpClient();
 
   @Value("${local.server.port}")
   private int port;
 
+  @Autowired private OfficeManager officeManager;
+
   // Posts a small text document, named as given, to the given path of the application.
   private HttpResponse<byte[]> post(final String path, final String filename)
       throws IOException, InterruptedException {
+    return post(path, filename, TEXT);
+  }
 
-    final String body =
-        "--"
-            + BOUNDARY
-            + "\r\nContent-Disposition: form-data; name=\"data\"; filename=\""
-            + filename
-            + "\"\r\nContent-Type: text/plain\r\n\r\nHello from the sample test\r\n--"
-            + BOUNDARY
-            + "--\r\n";
+  // Posts a document, named as given, to the given path of the application.
+  private HttpResponse<byte[]> post(final String path, final String filename, final byte[] document)
+      throws IOException, InterruptedException {
+
+    final ByteArrayOutputStream body = new ByteArrayOutputStream();
+    body.write(
+        ("--"
+                + BOUNDARY
+                + "\r\nContent-Disposition: form-data; name=\"data\"; filename=\""
+                + filename
+                + "\"\r\nContent-Type: application/octet-stream\r\n\r\n")
+            .getBytes(StandardCharsets.UTF_8));
+    body.write(document);
+    body.write(("\r\n--" + BOUNDARY + "--\r\n").getBytes(StandardCharsets.UTF_8));
     return client.send(
         HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
             .header("Content-Type", "multipart/form-data; boundary=" + BOUNDARY)
-            .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+            .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
             .build(),
         HttpResponse.BodyHandlers.ofByteArray());
   }
@@ -127,6 +144,53 @@ class ConverterControllerTest {
 
     assertThat(response.statusCode()).isEqualTo(200);
     assertThat(text(response)).startsWith("%PDF-");
+  }
+
+  @Test
+  void shouldOpenAProtectedDocumentWithItsPassword() throws Exception {
+
+    // A protected document, made with a converter that stores with a password.
+    final ByteArrayOutputStream protectedDocument = new ByteArrayOutputStream();
+    LocalConverter.builder()
+        .officeManager(officeManager)
+        .storeProperty("Password", "secret")
+        .build()
+        .convert(new ByteArrayInputStream(TEXT))
+        .as(DefaultDocumentFormatRegistry.TXT)
+        .to(protectedDocument)
+        .as(DefaultDocumentFormatRegistry.ODT)
+        .execute();
+    final byte[] document = protectedDocument.toByteArray();
+
+    final HttpResponse<byte[]> converted =
+        post("/lool/convert-to/pdf?password=secret", "secret.odt", document);
+    assertThat(converted.statusCode()).isEqualTo(200);
+    assertThat(text(converted)).startsWith("%PDF-");
+
+    // Without the password, the answer says what is missing.
+    final HttpResponse<byte[]> refused = post("/lool/convert-to/pdf", "secret.odt", document);
+    assertThat(refused.statusCode()).isEqualTo(400);
+    assertThat(text(refused)).isEqualTo("The document is protected: give its password.");
+
+    // With a wrong one, the conversion fails, and the answer mentions the password. Whether it
+    // is a 400 or a 500 depends on what the office reports: that the password is wrong, or only
+    // that the document could not be opened.
+    final HttpResponse<byte[]> wrong =
+        post("/lool/convert-to/pdf?password=wrong", "secret.odt", document);
+    assertThat(wrong.statusCode()).isIn(400, 500);
+    assertThat(text(wrong)).contains("password");
+  }
+
+  @Test
+  void shouldDescribeTheOffice() throws Exception {
+
+    final HttpResponse<String> response = get("/info");
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.headers().firstValue("Content-Type"))
+        .hasValueSatisfying(value -> assertThat(value).startsWith("application/json"));
+    assertThat(response.body())
+        .contains("\"productName\"", "\"version\"", "\"filters\"", "\"writer_pdf_Export\"");
   }
 
   @Test
