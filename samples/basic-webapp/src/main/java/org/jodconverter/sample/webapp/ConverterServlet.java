@@ -2,6 +2,8 @@ package org.jodconverter.sample.webapp;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Objects;
 import javax.servlet.ServletException;
@@ -87,7 +89,7 @@ public class ConverterServlet extends HttpServlet {
                   converter.getFormatRegistry().getFormatByExtension(outputExtension))
               .getMediaType());
       response.setHeader(
-          "Content-Disposition", "attachment; filename=" + baseName + "." + outputExtension);
+          "Content-Disposition", contentDisposition(baseName + "." + outputExtension));
       sendFile(outputFile, response);
     } catch (Exception exception) {
       if (LOGGER.isErrorEnabled()) {
@@ -105,6 +107,18 @@ public class ConverterServlet extends HttpServlet {
       FileUtils.deleteQuietly(outputFile);
       FileUtils.deleteQuietly(inputFile);
     }
+  }
+
+  // The name of the converted file comes from the request (the name of the uploaded file and the
+  // extension of the URL), so it is not written as it is in the header, where a quote or a line
+  // break would change the header: a plain name for old browsers, with anything unusual replaced,
+  // and the real name encoded as RFC 5987 says.
+  private static String contentDisposition(final String filename) {
+
+    final String fallback = filename.replaceAll("[^A-Za-z0-9._-]", "_");
+    final String encoded =
+        URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+    return "attachment; filename=\"" + fallback + "\"; filename*=UTF-8''" + encoded;
   }
 
   private void sendFile(final File file, final HttpServletResponse response) throws IOException {

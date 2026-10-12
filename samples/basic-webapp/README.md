@@ -16,11 +16,7 @@ Then, run:
 gradlew :samples:basic-webapp:tomcatRun
 ```
 
-If you experience connection issue on Windows 10, you may have to set a system property pointing to a templateProfileDir where OpenGL is disabled by default. Read [this](https://wiki.documentfoundation.org/OpenGL#:~:text=LibreOffice%205.3%20and%20newer%3A,Click%20%22Apply%20Changes%20and%20Restart%22) to know how to disable OpenGL. Then, run:
-
-```Shell
-gradlew :samples:basic-webapp:tomcatRun -Dorg.jodconverter.local.manager.templateProfileDir=<path to your directory>
-```
+The office home, the office port and a template profile directory (the settings the office processes start with) are context parameters of `src/main/webapp/WEB-INF/web.xml`: uncomment and edit the `office.home`, `office.port` and `office.profile` parameters there. A profile where OpenGL is disabled may help if the office does not start on some Windows machines; read [this](https://wiki.documentfoundation.org/OpenGL) to know how to disable it.
 
 Once started, use your favorite browser and visit this page:
 

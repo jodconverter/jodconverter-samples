@@ -15,12 +15,12 @@ import org.jodconverter.local.LocalConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,8 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Controller that will process conversion requests. The mapping is the same as LibreOffice Online
@@ -43,6 +45,11 @@ import java.util.Map;
 public class ConverterController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConverterController.class);
+
+    // The load properties that decide what the office may do on its own while it loads a
+    // document: update its links, run its macros.
+    private static final Set<String> RESTRICTED_LOAD_PROPERTIES =
+            Set.of("UpdateDocMode", "MacroExecutionMode");
 
     private final OfficeManager officeManager;
     private final DocumentFormatRegistry formatRegistry;
@@ -74,8 +81,10 @@ public class ConverterController {
                     @ApiResponse(responseCode = "200", description = "Document converted successfully."),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "The input document or output format is missing."),
-                    @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")
+                            description =
+                                    "The input document or the output format is missing, the format"
+                                            + " is not supported, or a parameter is not allowed."),
+                    @ApiResponse(responseCode = "500", description = "The conversion failed.")
             })
     @PostMapping(
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -103,8 +112,10 @@ public class ConverterController {
                     @ApiResponse(responseCode = "200", description = "Document converted successfully."),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "The input document or output format is missing."),
-                    @ApiResponse(responseCode = "500", description = "An unexpected error occurred.")
+                            description =
+                                    "The input document or the output format is missing, the format"
+                                            + " is not supported, or a parameter is not allowed."),
+                    @ApiResponse(responseCode = "500", description = "The conversion failed.")
             })
     @PostMapping(
             value = "/{format}",
@@ -130,25 +141,37 @@ public class ConverterController {
             final Map<String, String> parameters) {
 
         if (inputFile.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return badRequest("The input document is missing or empty.");
         }
 
         if (StringUtils.isBlank(outputFormat)) {
-            return ResponseEntity.badRequest().build();
+            return badRequest("The output format is missing.");
         }
+
+        final DocumentFormat targetFormat = formatRegistry.getFormatByExtension(outputFormat);
+        if (targetFormat == null) {
+            return badRequest("The output format is not supported: " + outputFormat);
+        }
+
+        // Decode the parameters to load and store properties.
+        final Map<String, Object> customLoadProperties = new HashMap<>();
+        final Map<String, Object> storeProperties = new HashMap<>();
+        parameterDecoder.decodeParameters(parameters, customLoadProperties, storeProperties);
+
+        // A caller chooses how its document is read and written, not whether the links and the
+        // macros of the document are trusted: these load properties stay what the converter
+        // sets by default.
+        for (final String name : customLoadProperties.keySet()) {
+            if (RESTRICTED_LOAD_PROPERTIES.stream().anyMatch(name::equalsIgnoreCase)) {
+                return badRequest("The load property " + name + " cannot be set by a request.");
+            }
+        }
+        final Map<String, Object> loadProperties =
+                new HashMap<>(LocalConverter.DEFAULT_LOAD_PROPERTIES);
+        loadProperties.putAll(customLoadProperties);
 
         // Here, we could have a dedicated service that would convert document
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-            final DocumentFormat targetFormat =
-                    formatRegistry.getFormatByExtension(outputFormat);
-            Assert.notNull(targetFormat, "targetFormat must not be null");
-
-            // Decode the parameters to load and store properties.
-            final Map<String, Object> loadProperties =
-                    new HashMap<>(LocalConverter.DEFAULT_LOAD_PROPERTIES);
-            final Map<String, Object> storeProperties = new HashMap<>();
-            parameterDecoder.decodeParameters(parameters, loadProperties, storeProperties);
 
             // Create a converter with the properties.
             final DocumentConverter converter =
@@ -164,16 +187,30 @@ public class ConverterController {
 
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(targetFormat.getMediaType()));
-            headers.add(
-                    "Content-Disposition",
-                    "attachment; filename="
-                            + FileUtils.getBaseName(inputFile.getOriginalFilename())
-                            + "."
-                            + targetFormat.getExtension());
+            // The name comes from the request: ContentDisposition quotes and encodes it, so that
+            // a quote or a line break in the name cannot change the header.
+            headers.setContentDisposition(
+                    ContentDisposition.attachment()
+                            .filename(
+                                    FileUtils.getBaseName(
+                                                    String.valueOf(inputFile.getOriginalFilename()))
+                                            + "."
+                                            + targetFormat.getExtension(),
+                                    StandardCharsets.UTF_8)
+                            .build());
             return ResponseEntity.ok().headers(headers).body(baos.toByteArray());
 
         } catch (OfficeException | IOException ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex);
+            // The details go to the log, not to the caller: an exception may tell paths and
+            // other internals of the server.
+            LOGGER.error("Could not convert {}", inputFile.getOriginalFilename(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("The document could not be converted.");
         }
+    }
+
+    private static ResponseEntity<Object> badRequest(final String message) {
+        return ResponseEntity.badRequest().contentType(MediaType.TEXT_PLAIN).body(message);
     }
 }
