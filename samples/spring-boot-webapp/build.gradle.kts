@@ -31,22 +31,24 @@ java {
     targetCompatibility = Versions.jvm
 }
 
-// If you experience connection issue on Windows 10, you may have to set a project property
-// pointing to a templateProfileDir where OpenGL is disabled by default. This must be done
-// for the Test and BootRun tasks.
-// Read here to know how to disable OpenGL:
-// https://wiki.documentfoundation.org/OpenGL#:~:text=LibreOffice%205.3%20and%20newer%3A,Click%20%22Apply%20Changes%20and%20Restart%22
+// The office processes can be started with settings of your own, from a template profile
+// directory (see the templateProfileDir option of JODConverter); for example a profile where
+// OpenGL is disabled, if the office does not start on some Windows machines:
+// https://wiki.documentfoundation.org/OpenGL
+// Give the directory to the test and bootRun tasks with a project property:
+//   gradlew :samples:spring-boot-webapp:bootRun -PtemplateProfileDir=<path to your directory>
+// It is passed as the jodconverter.local.template-profile-dir property of the starter.
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
 
-    project.findProperty("org.jodconverter.local.manager.templateProfileDir")?.let {
-        systemProperty("org.jodconverter.local.manager.templateProfileDir", it)
+    project.findProperty("templateProfileDir")?.let {
+        systemProperty("jodconverter.local.template-profile-dir", it)
     }
 }
 
 tasks.bootRun {
-    project.findProperty("org.jodconverter.local.manager.templateProfileDir")?.let {
-        systemProperty("org.jodconverter.local.manager.templateProfileDir", it)
+    project.findProperty("templateProfileDir")?.let {
+        systemProperty("jodconverter.local.template-profile-dir", it)
     }
 }

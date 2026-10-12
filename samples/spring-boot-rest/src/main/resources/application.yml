@@ -37,6 +37,19 @@ jodconverter:
           TEXT:
             FilterOptions: EmbedImages
 
+# The actuator shows the state of the office processes: /actuator/health has a "jodconverter"
+# component, and /actuator/metrics lists the jodconverter.* meters (queue size, workers by state,
+# restarts, task retries). Only these two endpoints are exposed, and the details of the health
+# are shown to everyone, which suits a sample: restrict both in a real application.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: always
+
 logging:
   level:
     org.jodconverter: debug

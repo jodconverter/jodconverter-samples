@@ -2,14 +2,15 @@ package org.jodconverter.sample.springboot;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -63,22 +64,31 @@ public class ConverterController {
       return ON_ERROR_REDIRECT;
     }
 
+    final DocumentFormat targetFormat =
+        converter.getFormatRegistry().getFormatByExtension(outputFormat);
+    if (targetFormat == null) {
+      redirectAttributes.addFlashAttribute(
+          ATTRNAME_ERROR_MESSAGE, "The output format is not supported.");
+      return ON_ERROR_REDIRECT;
+    }
+
     // Here, we could have a dedicated service that would convert document
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-      final DocumentFormat targetFormat =
-          converter.getFormatRegistry().getFormatByExtension(outputFormat);
-      Assert.notNull(targetFormat, "targetFormat must not be null");
       converter.convert(inputFile.getInputStream()).to(baos).as(targetFormat).execute();
 
       final HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.parseMediaType(targetFormat.getMediaType()));
-      headers.add(
-          "Content-Disposition",
-          "attachment; filename="
-              + FileUtils.getBaseName(inputFile.getOriginalFilename())
-              + "."
-              + targetFormat.getExtension());
+      // The name comes from the request: ContentDisposition quotes and encodes it, so that a
+      // quote or a line break in the name cannot change the header.
+      headers.setContentDisposition(
+          ContentDisposition.attachment()
+              .filename(
+                  FileUtils.getBaseName(String.valueOf(inputFile.getOriginalFilename()))
+                      + "."
+                      + targetFormat.getExtension(),
+                  StandardCharsets.UTF_8)
+              .build());
       return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
 
     } catch (OfficeException | IOException e) {
