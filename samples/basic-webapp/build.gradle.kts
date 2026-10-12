@@ -30,6 +30,9 @@ java {
 }
 
 tomcat {
+    // Set explicitly: the default of the plugin reads a property of the war task that Gradle 8
+    // removed, and tomcatRun fails without it.
+    contextPath = "jodconverter-sample-webapp"
     httpProtocol = "org.apache.coyote.http11.Http11Nio2Protocol"
     ajpProtocol = "org.apache.coyote.ajp.AjpNio2Protocol"
 }

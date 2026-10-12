@@ -1,18 +1,21 @@
 server:
   port: 8080
-  
+
 spring:
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 10MB
   application:
-    name: JODConverter Sample Spring Boot 
+    name: JODConverter Sample Spring Boot
 
 jodconverter:
   local:
     enabled: true
-    format-options:
+  # Since JODConverter 5.0, the options of the document formats are set once, for every converter
+  # (they were under jodconverter.local.format-options).
+  document-formats:
+    options:
       html:
         store:
           TEXT:

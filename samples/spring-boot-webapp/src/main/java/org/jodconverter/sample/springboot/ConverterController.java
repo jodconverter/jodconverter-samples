@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import org.jodconverter.core.DocumentConverter;
-import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
 import org.jodconverter.core.document.DocumentFormat;
 import org.jodconverter.core.office.OfficeException;
 import org.jodconverter.core.util.FileUtils;
@@ -68,7 +67,7 @@ public class ConverterController {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
       final DocumentFormat targetFormat =
-          DefaultDocumentFormatRegistry.getFormatByExtension(outputFormat);
+          converter.getFormatRegistry().getFormatByExtension(outputFormat);
       Assert.notNull(targetFormat, "targetFormat must not be null");
       converter.convert(inputFile.getInputStream()).to(baos).as(targetFormat).execute();
 
