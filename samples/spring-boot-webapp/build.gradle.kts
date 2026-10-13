@@ -17,7 +17,6 @@ dependencies {
     implementation(libs.jodconverter.spring.boot.starter)
 
     implementation(libs.spring.boot.starter.web)
-    implementation(libs.spring.boot.starter.thymeleaf)
 
     // The development tools restart the application when a class changes. They are for bootRun
     // only: declared as developmentOnly, they are not packaged in the war that is deployed.

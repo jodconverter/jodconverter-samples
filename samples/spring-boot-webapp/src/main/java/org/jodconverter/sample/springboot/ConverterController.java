@@ -13,11 +13,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,8 +39,11 @@ import org.jodconverter.local.filter.HeaderFooterRemoverFilter;
 import org.jodconverter.local.filter.PageOrientationFilter;
 import org.jodconverter.local.office.PasswordProtectedException;
 
-/** Controller providing conversion endpoints. */
-@Controller
+/**
+ * Controller providing the conversion endpoint. The page that calls it is a static resource
+ * (static/index.html), which Spring Boot serves as the welcome page.
+ */
+@RestController
 public class ConverterController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConverterController.class);
@@ -62,12 +64,6 @@ public class ConverterController {
   public ConverterController(final DocumentConverter converter, final OfficeManager officeManager) {
     this.converter = converter;
     this.officeManager = officeManager;
-  }
-
-  @SuppressWarnings("SameReturnValue")
-  @GetMapping("/")
-  /* default */ String index() {
-    return "converter";
   }
 
   /**
