@@ -1,0 +1,34 @@
+# Opens pull requests to update the dependencies of the samples and the actions of the workflow.
+# Docs: https://docs.github.com/en/code-security/dependabot
+version: 2
+
+updates:
+  # The versions are in gradle/libs.versions.toml.
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # A major version of JODConverter or of Spring Boot needs changes in the samples, and the two
+      # go together (the starter of JODConverter is built for one line of Spring Boot): they are
+      # upgraded deliberately, not proposed.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # The basic web application is run by an old Gradle plugin, with which Tomcat 9.0.31 or later
+      # logs an error at each start (see gradle/libs.versions.toml).
+      - dependency-name: "org.apache.tomcat.embed:*"
+    groups:
+      gradle-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        update-types:
+          - "minor"
+          - "patch"

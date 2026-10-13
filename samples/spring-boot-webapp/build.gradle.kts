@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("war")
-    id("org.springframework.boot") version Versions.springBoot
+    alias(libs.plugins.spring.boot)
 }
 
 description = "Sample Spring Boot Web Application"
@@ -11,24 +11,39 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:${Versions.springBoot}"))
+    implementation(platform(libs.spring.boot.dependencies))
 
-    implementation("org.jodconverter:jodconverter-local-lo:${Versions.Dependencies.jodConverter}")
-    implementation("org.jodconverter:jodconverter-spring-boot-starter:${Versions.Dependencies.jodConverter}")
+    implementation(libs.jodconverter.local.lo)
+    implementation(libs.jodconverter.spring.boot.starter)
 
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-    implementation("org.springframework.boot:spring-boot-devtools")
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.thymeleaf)
 
-    implementation("commons-io:commons-io:${Versions.Dependencies.commonsIo}")
+    // The development tools restart the application when a class changes. They are for bootRun
+    // only: declared as developmentOnly, they are not packaged in the war that is deployed.
+    developmentOnly(platform(libs.spring.boot.dependencies))
+    developmentOnly(libs.spring.boot.devtools)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    implementation(libs.commons.io)
+
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.junit.jupiter.api)
+
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 java {
-    sourceCompatibility = Versions.jvm
-    targetCompatibility = Versions.jvm
+    sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+    targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+}
+
+// The plain war, the one for a servlet container, is made from the runtime classpath, which has
+// the development tools: they are left out of it, as the Spring Boot plugin leaves them out of
+// the executable war.
+tasks.war {
+    classpath?.let { files ->
+        setClasspath(files.filter { !it.name.startsWith("spring-boot-devtools") })
+    }
 }
 
 // The office processes can be started with settings of your own, from a template profile
