@@ -59,7 +59,7 @@ jobs:
       # reporter), which needs no permission. They are written even when a test failed, which is
       # when they are needed, and a report that cannot be made does not fail the job.
       - name: Report (REST)
-        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3.2.0
         if: always()
         continue-on-error: true
         with:
@@ -69,7 +69,7 @@ jobs:
           fail-on-error: false
 
       - name: Report (WEBAPP)
-        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3.2.0
         if: always()
         continue-on-error: true
         with:
