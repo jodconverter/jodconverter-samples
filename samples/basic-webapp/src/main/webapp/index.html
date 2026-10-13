@@ -1,18 +1,13 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>JODConverter Sample Webapp</title>
     <style>
 
         body {
             font-family: sans-serif;
             font-size: 13px;
-        }
-
-        a {
-            text-decoration: none;
-            color: #900;
         }
 
         h1 {
@@ -29,66 +24,29 @@
 
         td.label {
             text-align: right;
-            right-padding: 10px;
+            padding-right: 10px;
+        }
+
+        #errorMessage {
+            margin-left: 15px;
+            color: #900;
         }
 
     </style>
-    <script type="text/javascript" src="documentFormats.js"></script>
-    <script type="text/javascript">
-
-        function updateOutputFormats() {
-
-            const btnConvert = document.getElementById("btnConvert");
-            const inputDocument = document.getElementById("inputDocument");
-
-            const dot = inputDocument.value.lastIndexOf('.');
-            if (dot !== -1) {
-                const extension = inputDocument.value.substr(dot + 1);
-                const family = importFormatTable[extension];
-                if (family === undefined) {
-                    alert('Sorry, but conversion from the document type "' + extension + '" is not supported');
-                    inputDocument.value = "";
-                    btnConvert.disabled = true;
-                    return false;
-                }
-                const formats = exportFormatTable[family];
-                const options = document.getElementById("outputFormat").options;
-                options.length = 0;
-                for (let i = 0; i &lt; formats.length; i++) {
-                    const option = formats[i];
-                    if (option.value !== extension) {
-                        options[options.length] = option;
-                    }
-                }
-                btnConvert.disabled = false;
-                return true;
-            }
-            if (inputDocument.value !== '') {
-                alert('Sorry, but conversion from unknown document type is not supported');
-            }
-            inputDocument.value = "";
-            btnConvert.disabled = true;
-            return false;
-        }
-
-        function doSubmit(form) {
-            form.action = 'converted/document.' + form.outputFormat.value;
-            return true;
-        }
-
-    </script>
 </head>
-<body onload="updateOutputFormats()">
+<body>
 
 <h1>JODConverter Sample - Web Application</h1>
 <h2>Convert office documents</h2>
 
-<form method="post" enctype="multipart/form-data" action="converted/document.pdf" onsubmit="return doSubmit(this)">
+<!-- The script of the page sends the form and saves the answer. The format is in the URL of the
+     request: converted/document.pdf converts to PDF. -->
+<form id="converterForm" method="post" enctype="multipart/form-data" action="converted/document.pdf">
     <table class="form">
         <tr>
             <td class="label">Document:</td>
             <td>
-                <input type="file" id="inputDocument" name="inputDocument" size="40" onchange="updateOutputFormats()"/>
+                <input type="file" id="inputDocument" name="inputDocument" size="40"/>
             </td>
         </tr>
         <tr>
@@ -97,11 +55,120 @@
                 <select id="outputFormat" name="outputFormat" style="width: 38ex;">
                     <option value="pdf">Portable Document Format (pdf)</option>
                 </select>
-                <input id="btnConvert" type="submit" value="Convert!"/>
+                <input id="btnConvert" type="submit" value="Convert!" disabled/>
             </td>
         </tr>
     </table>
 </form>
+
+<!-- Where the script shows why a document cannot be converted. -->
+<p id="errorMessage" role="alert"></p>
+
+<script src="documentFormats.js"></script>
+<script>
+
+    const form = document.getElementById("converterForm");
+    const inputDocument = document.getElementById("inputDocument");
+    const outputFormat = document.getElementById("outputFormat");
+    const btnConvert = document.getElementById("btnConvert");
+
+    // Shows a message as text, never as HTML: it may hold the name of the chosen file.
+    function showError(message) {
+        document.getElementById("errorMessage").textContent = message;
+    }
+
+    // The name of the chosen file, cut at its last dot.
+    function chosenFile() {
+        const name = inputDocument.files.length ? inputDocument.files[0].name : "";
+        const dot = name.lastIndexOf(".");
+        return {
+            name: name,
+            baseName: dot > 0 ? name.substring(0, dot) : name,
+            extension: dot === -1 ? "" : name.substring(dot + 1).toLowerCase()
+        };
+    }
+
+    // Lists the formats the chosen document can be converted to.
+    function updateOutputFormats() {
+
+        showError("");
+        btnConvert.disabled = true;
+
+        const file = chosenFile();
+        if (!file.name) {
+            return;
+        }
+        const family = importFormatTable[file.extension];
+        if (family === undefined) {
+            showError(file.extension
+                ? 'Sorry, but conversion from the document type "' + file.extension + '" is not supported.'
+                : "Sorry, but conversion from an unknown document type is not supported.");
+            inputDocument.value = "";
+            return;
+        }
+
+        outputFormat.options.length = 0;
+        exportFormatTable[family].forEach((format) => {
+            if (format.value !== file.extension) {
+                outputFormat.add(format);
+            }
+        });
+        btnConvert.disabled = false;
+    }
+
+    // Saves a file that the page holds, as a download of the browser would.
+    function saveFile(blob, filename) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        // The browser has started to save the file: its content can be released.
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
+    // Sends the form from the page, instead of letting the browser leave the page for the answer:
+    // the page shows the message of the server when the conversion is refused or fails, and saves
+    // the converted document otherwise.
+    async function convert(event) {
+
+        event.preventDefault();
+        showError("");
+
+        const extension = outputFormat.value;
+        const convertedName = chosenFile().baseName + "." + extension;
+        const body = new FormData(form);
+
+        btnConvert.disabled = true;
+        btnConvert.value = "Converting...";
+        try {
+            const response = await fetch("converted/document." + extension, {method: "POST", body: body});
+            if (response.ok) {
+                saveFile(await response.blob(), convertedName);
+            } else {
+                // The servlet answers an error with a short message as plain text.
+                const message = response.headers.get("Content-Type")?.startsWith("text/plain")
+                    ? await response.text()
+                    : "";
+                showError(message || "The conversion failed (HTTP " + response.status + ").");
+            }
+        } catch (error) {
+            // No answer at all: the server is stopped, or it closed the connection on an upload
+            // that is too large.
+            showError("The server did not answer. Is it running, and is the document under the size limit?");
+        } finally {
+            btnConvert.value = "Convert!";
+            btnConvert.disabled = false;
+        }
+    }
+
+    inputDocument.addEventListener("change", updateOutputFormats);
+    form.addEventListener("submit", convert);
+    // A browser may keep the chosen file when the page is reloaded.
+    updateOutputFormats();
+
+</script>
 
 </body>
 </html>

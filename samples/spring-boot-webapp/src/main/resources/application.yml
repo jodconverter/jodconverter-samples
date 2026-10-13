@@ -1,17 +1,15 @@
 server:
   port: 8080
-  servlet:
-    session:
-      # The session, which carries the error message to the page after a redirection, is kept in
-      # a cookie only. Otherwise the first redirection of a visitor has the session id in its
-      # URL (/;jsessionid=...), which the application does not serve: a 404 instead of the message.
-      tracking-modes: cookie
 
 spring:
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 10MB
+      # The upload is read when the controller asks for it, not before the controller is chosen:
+      # an upload that is too large is then an error of the controller, which answers it with a
+      # message as it does for the other errors.
+      resolve-lazily: true
   application:
     name: JODConverter Sample Spring Boot
 

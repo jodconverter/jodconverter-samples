@@ -1,7 +1,6 @@
 package org.jodconverter.sample.webapp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -114,7 +113,12 @@ class BasicWebappTest {
 
     final HttpResponse<byte[]> response = post("converted/document.nope", "hello.txt", text());
 
+    // The page shows the answer: a short message as plain text.
     assertEquals(400, response.statusCode());
+    assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("text/plain"));
+    assertEquals(
+        "The output format is missing or not supported",
+        new String(response.body(), StandardCharsets.UTF_8));
   }
 
   @Test
@@ -128,6 +132,7 @@ class BasicWebappTest {
             HttpResponse.BodyHandlers.ofString());
 
     assertEquals(400, response.statusCode());
+    assertEquals("Only multipart requests are allowed", response.body());
   }
 
   @Test
@@ -141,7 +146,9 @@ class BasicWebappTest {
     // the answer does not tell how.
     if (response.statusCode() != 200) {
       assertEquals(500, response.statusCode());
-      assertFalse(new String(response.body(), StandardCharsets.UTF_8).contains("Exception"));
+      assertEquals(
+          "The document could not be converted",
+          new String(response.body(), StandardCharsets.UTF_8));
     }
   }
 }

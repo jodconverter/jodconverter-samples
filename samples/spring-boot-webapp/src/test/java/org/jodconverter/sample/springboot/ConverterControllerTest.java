@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -55,7 +54,6 @@ class ConverterControllerTest {
               + "</office:text></office:body></office:document>")
           .getBytes(StandardCharsets.UTF_8);
 
-  // The redirections are not followed, to see them.
   private final HttpClient client = HttpClient.newHttpClient();
 
   @Value("${local.server.port}")
@@ -65,10 +63,7 @@ class ConverterControllerTest {
 
   // Posts the form of the page with a document and the given fields.
   private HttpResponse<byte[]> post(
-      final HttpClient httpClient,
-      final String filename,
-      final byte[] document,
-      final Map<String, String> fields)
+      final String filename, final byte[] document, final Map<String, String> fields)
       throws IOException, InterruptedException {
 
     final ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -94,7 +89,7 @@ class ConverterControllerTest {
     }
     body.write(("--" + BOUNDARY + "--\r\n").getBytes(StandardCharsets.UTF_8));
 
-    return httpClient.send(
+    return client.send(
         HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/converter"))
             .header("Content-Type", "multipart/form-data; boundary=" + BOUNDARY)
             .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
@@ -110,7 +105,15 @@ class ConverterControllerTest {
     for (int i = 0; i < fields.length; i += 2) {
       map.put(fields[i], fields[i + 1]);
     }
-    return post(client, filename, document, map);
+    return post(filename, document, map);
+  }
+
+  // The message of a refused or failed conversion, which the page shows.
+  private static String message(final HttpResponse<byte[]> response, final int status) {
+    assertThat(response.statusCode()).isEqualTo(status);
+    assertThat(response.headers().firstValue("Content-Type"))
+        .hasValueSatisfying(value -> assertThat(value).startsWith("text/plain"));
+    return new String(response.body(), StandardCharsets.UTF_8);
   }
 
   // A PDF document as text, one byte per character, to look for its markers.
@@ -170,10 +173,32 @@ class ConverterControllerTest {
   }
 
   @Test
-  void shouldGoBackToThePageWithoutAFormatOrWithAnUnknownOne() throws Exception {
+  void shouldRefuseARequestWithoutAFormatOrWithAnUnknownOne() throws Exception {
 
-    assertThat(post("hello.txt", TEXT).statusCode()).isEqualTo(302);
-    assertThat(post("hello.txt", TEXT, "outputFormat", "nope").statusCode()).isEqualTo(302);
+    assertThat(message(post("hello.txt", TEXT), 400)).isEqualTo("Please select an output format.");
+    assertThat(message(post("hello.txt", TEXT, "outputFormat", "nope"), 400))
+        .isEqualTo("The output format is not supported.");
+  }
+
+  @Test
+  void shouldRefuseARequestThatIsNotAnUpload() throws Exception {
+
+    final HttpResponse<byte[]> response =
+        client.send(
+            HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/converter"))
+                .POST(HttpRequest.BodyPublishers.ofString("not a form"))
+                .build(),
+            HttpResponse.BodyHandlers.ofByteArray());
+
+    assertThat(message(response, 400)).isEqualTo("Please select a file to upload.");
+  }
+
+  @Test
+  void shouldRefuseADocumentThatIsTooLarge() throws Exception {
+
+    // One byte more than spring.servlet.multipart.max-file-size.
+    assertThat(message(post("large.txt", new byte[5 * 1024 * 1024 + 1], "outputFormat", "pdf"), 413))
+        .isEqualTo("The document is too large.");
   }
 
   @Test
@@ -247,23 +272,17 @@ class ConverterControllerTest {
     assertThat(pdf(post("secret.odt", document, "outputFormat", "pdf", "password", "secret")))
         .isNotEmpty();
 
-    // Without it, or with a wrong one, the page comes back with a message that says which. The
-    // message travels in the session: this client keeps the cookie and follows the redirection.
-    final HttpClient browser =
-        HttpClient.newBuilder()
-            .cookieHandler(new CookieManager())
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
-    final Map<String, String> fields = new LinkedHashMap<>();
-    fields.put("outputFormat", "pdf");
-    assertThat(new String(post(browser, "secret.odt", document, fields).body(), StandardCharsets.UTF_8))
-        .contains("The document is protected: give its password in the options.");
-    fields.put("password", "wrong");
-    assertThat(new String(post(browser, "secret.odt", document, fields).body(), StandardCharsets.UTF_8))
+    // Without it, or with a wrong one, the answer is a message that says which.
+    assertThat(message(post("secret.odt", document, "outputFormat", "pdf"), 400))
+        .isEqualTo("The document is protected: give its password in the options.");
+    final HttpResponse<byte[]> wrong =
+        post("secret.odt", document, "outputFormat", "pdf", "password", "wrong");
+    assertThat(new String(wrong.body(), StandardCharsets.UTF_8))
         .containsAnyOf(
-            // What the page says depends on what the office reports for a wrong password: that
-            // it is wrong, or only that the document could not be opened.
+            // What the answer says depends on what the office reports for a wrong password: that
+            // it is wrong (400), or only that the document could not be opened (500).
             "The password is not the one of the document.",
             "If it is protected, check its password.");
+    assertThat(wrong.statusCode()).isIn(400, 500);
   }
 }
