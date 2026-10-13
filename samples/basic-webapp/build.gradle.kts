@@ -23,17 +23,13 @@ dependencies {
 
     runtimeOnly(libs.slf4j.simple)
 
-    // Tomcat, with its JSP engine: the application has no JSP page, but a servlet container
-    // declares the JSP servlet for every application, and logs an error when it is missing.
     "launcherImplementation"(libs.tomcat.embed.core)
-    "launcherRuntimeOnly"(libs.tomcat.embed.jasper)
 
     // The test starts the launcher with the war file, and calls the application over HTTP.
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter.api)
     testImplementation(launcher.output)
     testImplementation(libs.tomcat.embed.core)
-    testRuntimeOnly(libs.tomcat.embed.jasper)
 
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

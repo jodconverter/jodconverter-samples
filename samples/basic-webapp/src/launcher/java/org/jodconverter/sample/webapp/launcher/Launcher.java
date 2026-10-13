@@ -3,7 +3,9 @@ package org.jodconverter.sample.webapp.launcher;
 import java.io.File;
 import java.nio.file.Files;
 
+import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Tomcat;
 
 /**
@@ -36,7 +38,16 @@ public final class Launcher {
     tomcat.setPort(port);
     // Creates the HTTP connector, which Tomcat only does when asked.
     tomcat.getConnector();
-    tomcat.addWebapp(CONTEXT_PATH, warFile.getAbsolutePath());
+
+    // The defaults that Tomcat gives to every application include the JSP servlet, which needs
+    // the JSP engine. The application has no JSP page, so only the defaults it uses are given
+    // here: the servlet that serves the static files, and the media types of the files.
+    tomcat.setAddDefaultWebXmlToWebapp(false);
+    final Context context = tomcat.addWebapp(CONTEXT_PATH, warFile.getAbsolutePath());
+    Tomcat.addServlet(context, "default", new DefaultServlet()).setLoadOnStartup(1);
+    context.addServletMapping("/", "default");
+    Tomcat.addDefaultMimeTypeMappings(context);
+
     tomcat.start();
     return tomcat;
   }
