@@ -1,0 +1,82 @@
+# The versions of everything the samples use, in one place. Dependabot reads this file and
+# proposes the updates (see .github/dependabot.yml).
+
+[versions]
+
+# The Java version the samples are compiled for. JODConverter 5 needs Java 17 or later.
+java = "17"
+
+# Latest version -> https://central.sonatype.com/artifact/org.jodconverter/jodconverter-core
+jodconverter = "5.1.0"
+
+# The Spring Boot line that the starter of JODConverter is built for.
+# Latest version -> https://central.sonatype.com/artifact/org.springframework.boot/spring-boot
+spring-boot = "4.1.1"
+
+# Latest version -> https://central.sonatype.com/artifact/commons-io/commons-io
+commons-io = "2.22.0"
+
+# The line of springdoc for Spring Boot 4.
+# Latest version -> https://central.sonatype.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
+springdoc = "3.1.1"
+
+# Latest version -> https://central.sonatype.com/artifact/io.swagger.core.v3/swagger-annotations
+swagger = "2.2.55"
+
+# Latest version -> https://central.sonatype.com/artifact/org.slf4j/slf4j-api
+slf4j = "2.0.20"
+
+# --- The basic web application -------------------------------------------------------------------
+# It is a javax.servlet application run by an old Gradle plugin, and the four versions below go
+# together: they are not updated by Dependabot (see the ignore rules of .github/dependabot.yml).
+
+# Latest version -> https://plugins.gradle.org/plugin/com.bmuschko.tomcat
+bmuschko-tomcat = "2.7.0"
+
+# Tomcat 9 is the last line with javax.servlet. Since 9.0.31, Tomcat refuses to start an AJP
+# connector without a secret, and the plugin always starts one: with a later version (tried with
+# 9.0.123 on 2026-10-13) the application is served, but tomcatRun logs "Protocol handler start
+# failed" with its stack trace at each start. See
+# https://github.com/bmuschko/gradle-tomcat-plugin/pull/209
+tomcat = "9.0.30"
+
+# The javax.servlet API; version 5 and later are jakarta.servlet.
+servlet-api = "4.0.1"
+
+# The 1.x line works with javax.servlet; 2.x has other coordinates.
+commons-fileupload = "1.6.0"
+
+[libraries]
+
+jodconverter-local-lo = { module = "org.jodconverter:jodconverter-local-lo", version.ref = "jodconverter" }
+jodconverter-spring-boot-starter = { module = "org.jodconverter:jodconverter-spring-boot-starter", version.ref = "jodconverter" }
+
+# The BOM of Spring Boot gives their versions to the libraries below that have none: each build
+# file imports it with platform(libs.spring.boot.dependencies).
+spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
+jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-log4j12 = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
+
+commons-fileupload = { module = "commons-fileupload:commons-fileupload", version.ref = "commons-fileupload" }
+servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
+tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
+
+[plugins]
+
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+bmuschko-tomcat = { id = "com.bmuschko.tomcat", version.ref = "bmuschko-tomcat" }

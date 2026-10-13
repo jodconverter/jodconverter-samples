@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("war")
-    id("org.springframework.boot") version Versions.springBoot
+    alias(libs.plugins.spring.boot)
 }
 
 description = "Sample Spring Boot Rest Api"
@@ -11,30 +11,31 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("org.springframework.boot:spring-boot-dependencies:${Versions.springBoot}"))
+    implementation(platform(libs.spring.boot.dependencies))
 
-    implementation("org.jodconverter:jodconverter-local-lo:${Versions.Dependencies.jodConverter}")
-    implementation("org.jodconverter:jodconverter-spring-boot-starter:${Versions.Dependencies.jodConverter}")
+    implementation(libs.jodconverter.local.lo)
+    implementation(libs.jodconverter.spring.boot.starter)
 
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation(libs.spring.boot.starter.web)
     // The health indicator and the meters of JODConverter appear with the actuator.
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation(libs.spring.boot.starter.actuator)
 
-    implementation("commons-io:commons-io:${Versions.Dependencies.commonsIo}")
-    implementation("org.glassfish.jaxb:jaxb-runtime")
+    implementation(libs.commons.io)
+    implementation(libs.jaxb.runtime)
 
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${Versions.Dependencies.openApi}")
-    implementation("io.swagger.core.v3:swagger-annotations:${Versions.Dependencies.swagger}")
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.swagger.annotations)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.junit.jupiter.api)
 
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 java {
-    sourceCompatibility = Versions.jvm
-    targetCompatibility = Versions.jvm
+    sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+    targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
 }
 
 // The office processes can be started with settings of your own, from a template profile

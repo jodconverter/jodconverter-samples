@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("war")
-    id("com.bmuschko.tomcat") version Versions.Plugins.bmuschkoTomcat
+    alias(libs.plugins.bmuschko.tomcat)
 }
 
 description = "Sample Web Application"
@@ -11,22 +11,22 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jodconverter:jodconverter-local-lo:${Versions.Dependencies.jodConverter}")
+    implementation(libs.jodconverter.local.lo)
 
-    implementation("commons-fileupload:commons-fileupload:${Versions.Dependencies.commonsFileUpload}")
-    implementation("org.slf4j:slf4j-api:${Versions.Dependencies.slf4j}")
+    implementation(libs.commons.fileupload)
+    implementation(libs.slf4j.api)
 
-    compileOnly("javax.servlet:javax.servlet-api:${Versions.Dependencies.servletApi}")
+    compileOnly(libs.servlet.api)
 
-    runtimeOnly("org.slf4j:slf4j-log4j12:${Versions.Dependencies.slf4j}")
+    runtimeOnly(libs.slf4j.log4j12)
 
-    tomcat("org.apache.tomcat.embed:tomcat-embed-core:${Versions.Dependencies.tomcat}")
-    tomcat("org.apache.tomcat.embed:tomcat-embed-jasper:${Versions.Dependencies.tomcat}")
+    tomcat(libs.tomcat.embed.core)
+    tomcat(libs.tomcat.embed.jasper)
 }
 
 java {
-    sourceCompatibility = Versions.jvm
-    targetCompatibility = Versions.jvm
+    sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+    targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
 }
 
 tomcat {
