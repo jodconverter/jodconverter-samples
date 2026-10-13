@@ -5,107 +5,124 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Objects;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.jodconverter.core.DocumentConverter;
+import org.jodconverter.core.document.DocumentFormat;
 import org.jodconverter.core.util.FileUtils;
 
-/** Converter servlet. */
+/**
+ * Converts the document uploaded by the form of the page to the format named by the extension of
+ * the request URL, and sends the converted document back.
+ *
+ * <p>The upload is read with the multipart support of the servlet container, which web.xml
+ * configures for this servlet (maximum size of a file and of a request).
+ */
 public class ConverterServlet extends HttpServlet {
   private static final long serialVersionUID = -591469426224201748L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConverterServlet.class);
 
+  private static final String PART_NAME = "inputDocument";
+
   @Override
   public void init() {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Servlet {} has started", this.getServletName());
-    }
+    LOGGER.info("Servlet {} has started", this.getServletName());
   }
 
   @Override
   public void destroy() {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("Servlet {} has stopped", this.getServletName());
-    }
+    LOGGER.info("Servlet {} has stopped", this.getServletName());
   }
 
   @Override
   protected void doPost(final HttpServletRequest request, final HttpServletResponse response)
       throws ServletException, IOException {
 
-    if (!ServletFileUpload.isMultipartContent(request)) {
-      response.sendError(HttpServletResponse.SC_FORBIDDEN, "Only multipart requests are allowed");
+    final String contentType = request.getContentType();
+    if (contentType == null || !contentType.toLowerCase().startsWith("multipart/form-data")) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Only multipart requests are allowed");
       return;
     }
 
-    final WebappContext webappContext = WebappContext.get(getServletContext());
-
-    final FileItem uploadedFile;
+    final Part uploadedFile;
     try {
-      uploadedFile = getUploadedFile(webappContext.getFileUpload(), request);
-    } catch (FileUploadException fileUploadException) {
-      throw new ServletException(fileUploadException);
+      uploadedFile = request.getPart(PART_NAME);
+    } catch (IllegalStateException tooLarge) {
+      // The container refuses a file or a request larger than what web.xml allows.
+      response.sendError(
+          HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, "The uploaded document is too large");
+      return;
     }
-    if (uploadedFile == null) {
-      throw new ServletException("Uploaded file is null");
+    if (uploadedFile == null || uploadedFile.getSize() == 0) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No document was uploaded");
+      return;
     }
-    final String inputExtension = FileUtils.getExtension(uploadedFile.getName());
 
-    final String baseName = Objects.requireNonNull(FileUtils.getBaseName(uploadedFile.getName()));
-    final File inputFile = File.createTempFile(baseName, "." + inputExtension);
-    FileUtils.deleteQuietly(inputFile);
-    writeUploadedFile(uploadedFile, inputFile);
+    // The name of the uploaded file, without any path that a browser may have sent with it.
+    final String uploadedName =
+        new File(String.valueOf(uploadedFile.getSubmittedFileName())).getName();
+    final String inputExtension = FileUtils.getExtension(uploadedName);
+    final String baseName = String.valueOf(FileUtils.getBaseName(uploadedName));
+    final String outputExtension = FileUtils.getExtension(request.getRequestURI());
 
-    final String outputExtension =
-        Objects.requireNonNull(FileUtils.getExtension(request.getRequestURI()));
-    final File outputFile = File.createTempFile(baseName, "." + outputExtension);
-    FileUtils.deleteQuietly(outputFile);
+    final DocumentConverter converter =
+        WebappContext.get(getServletContext()).getDocumentConverter();
+    final DocumentFormat outputFormat =
+        outputExtension == null
+            ? null
+            : converter.getFormatRegistry().getFormatByExtension(outputExtension);
+    if (outputFormat == null) {
+      response.sendError(
+          HttpServletResponse.SC_BAD_REQUEST, "The output format is missing or not supported");
+      return;
+    }
+
+    // The office converts from a file to a file: the upload is written to a temporary file, whose
+    // extension tells the office what the document is.
+    final File inputFile =
+        File.createTempFile("upload", inputExtension == null ? "" : "." + inputExtension);
+    final File outputFile = File.createTempFile("converted", "." + outputFormat.getExtension());
     try {
-      final DocumentConverter converter = webappContext.getDocumentConverter();
+      uploadedFile.write(inputFile.getAbsolutePath());
+
       final long startTime = System.currentTimeMillis();
       converter.convert(inputFile).to(outputFile).execute();
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info(
-            String.format(
-                "Successful conversion: %s [%db] to %s in %dms",
-                inputExtension,
-                inputFile.length(),
-                outputExtension,
-                System.currentTimeMillis() - startTime));
-      }
-      response.setContentType(
-          Objects.requireNonNull(
-                  converter.getFormatRegistry().getFormatByExtension(outputExtension))
-              .getMediaType());
+      LOGGER.info(
+          "Successful conversion: {} [{}b] to {} in {}ms",
+          inputExtension,
+          inputFile.length(),
+          outputFormat.getExtension(),
+          System.currentTimeMillis() - startTime);
+
+      response.setContentType(outputFormat.getMediaType());
       response.setHeader(
-          "Content-Disposition", contentDisposition(baseName + "." + outputExtension));
-      sendFile(outputFile, response);
+          "Content-Disposition",
+          contentDisposition(baseName + "." + outputFormat.getExtension()));
+      response.setContentLengthLong(outputFile.length());
+      Files.copy(outputFile.toPath(), response.getOutputStream());
+
     } catch (Exception exception) {
-      if (LOGGER.isErrorEnabled()) {
-        LOGGER.error(
-            String.format(
-                "Failed conversion: %s [%db] to %s; %s; input file: %s",
-                inputExtension,
-                inputFile.length(),
-                outputExtension,
-                exception,
-                inputFile.getName()));
-      }
-      throw new ServletException("Conversion failed", exception);
+      // The details are for the log: the caller is only told that the conversion failed.
+      LOGGER.error(
+          "Failed conversion: {} [{}b] to {}",
+          inputExtension,
+          inputFile.length(),
+          outputFormat.getExtension(),
+          exception);
+      response.sendError(
+          HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The document could not be converted");
     } finally {
       FileUtils.deleteQuietly(outputFile);
       FileUtils.deleteQuietly(inputFile);
+      uploadedFile.delete();
     }
   }
 
@@ -119,32 +136,5 @@ public class ConverterServlet extends HttpServlet {
     final String encoded =
         URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
     return "attachment; filename=\"" + fallback + "\"; filename*=UTF-8''" + encoded;
-  }
-
-  private void sendFile(final File file, final HttpServletResponse response) throws IOException {
-
-    response.setContentLength((int) file.length());
-    Files.copy(file.toPath(), response.getOutputStream());
-  }
-
-  private void writeUploadedFile(final FileItem uploadedFile, final File destinationFile)
-      throws ServletException {
-
-    try {
-      uploadedFile.write(destinationFile);
-    } catch (Exception exception) {
-      throw new ServletException("Error writing uploaded file", exception);
-    }
-    uploadedFile.delete();
-  }
-
-  private FileItem getUploadedFile(
-      final ServletFileUpload fileUpload, final HttpServletRequest request)
-      throws FileUploadException {
-
-    return fileUpload.parseRequest(request).stream()
-        .filter(fileItem -> !fileItem.isFormField())
-        .findFirst()
-        .orElse(null);
   }
 }

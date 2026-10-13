@@ -14,9 +14,6 @@ updates:
       # upgraded deliberately, not proposed.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-      # The basic web application is run by an old Gradle plugin, with which Tomcat 9.0.31 or later
-      # logs an error at each start (see gradle/libs.versions.toml).
-      - dependency-name: "org.apache.tomcat.embed:*"
     groups:
       gradle-minor-and-patch:
         update-types:

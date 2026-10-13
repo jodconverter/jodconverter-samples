@@ -27,24 +27,20 @@ swagger = "2.2.55"
 slf4j = "2.0.20"
 
 # --- The basic web application -------------------------------------------------------------------
-# It is a javax.servlet application run by an old Gradle plugin, and the four versions below go
-# together: they are not updated by Dependabot (see the ignore rules of .github/dependabot.yml).
 
-# Latest version -> https://plugins.gradle.org/plugin/com.bmuschko.tomcat
-bmuschko-tomcat = "2.7.0"
+# The embedded server that runs the web application (the run task and the test). Tomcat 11
+# implements Jakarta Servlet 6.1.
+# Latest version -> https://central.sonatype.com/artifact/org.apache.tomcat.embed/tomcat-embed-core
+tomcat = "11.0.27"
 
-# Tomcat 9 is the last line with javax.servlet. Since 9.0.31, Tomcat refuses to start an AJP
-# connector without a secret, and the plugin always starts one: with a later version (tried with
-# 9.0.123 on 2026-10-13) the application is served, but tomcatRun logs "Protocol handler start
-# failed" with its stack trace at each start. See
-# https://github.com/bmuschko/gradle-tomcat-plugin/pull/209
-tomcat = "9.0.30"
+# The API the web application is written for; the servlet container provides it.
+# Latest version -> https://central.sonatype.com/artifact/jakarta.servlet/jakarta.servlet-api
+jakarta-servlet = "6.1.0"
 
-# The javax.servlet API; version 5 and later are jakarta.servlet.
-servlet-api = "4.0.1"
-
-# The 1.x line works with javax.servlet; 2.x has other coordinates.
-commons-fileupload = "1.6.0"
+# The tests of the basic web application; the Spring Boot samples take JUnit from the BOM of
+# Spring Boot.
+# Latest version -> https://central.sonatype.com/artifact/org.junit/junit-bom
+junit = "6.1.3"
 
 [libraries]
 
@@ -69,14 +65,15 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref = "swagger" }
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
-slf4j-log4j12 = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
-commons-fileupload = { module = "commons-fileupload:commons-fileupload", version.ref = "commons-fileupload" }
-servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
+jakarta-servlet-api = { module = "jakarta.servlet:jakarta.servlet-api", version.ref = "jakarta-servlet" }
 tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
+
+# The BOM of JUnit, for the basic web application, which has no BOM of Spring Boot.
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
 [plugins]
 
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
-bmuschko-tomcat = { id = "com.bmuschko.tomcat", version.ref = "bmuschko-tomcat" }
