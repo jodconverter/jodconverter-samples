@@ -52,7 +52,6 @@ jodconverter-spring-boot-starter = { module = "org.jodconverter:jodconverter-spr
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
-spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime" }
