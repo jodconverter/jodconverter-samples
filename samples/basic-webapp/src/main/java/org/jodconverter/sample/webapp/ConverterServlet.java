@@ -48,7 +48,7 @@ public class ConverterServlet extends HttpServlet {
 
     final String contentType = request.getContentType();
     if (contentType == null || !contentType.toLowerCase().startsWith("multipart/form-data")) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Only multipart requests are allowed");
+      refuse(response, HttpServletResponse.SC_BAD_REQUEST, "Only multipart requests are allowed");
       return;
     }
 
@@ -57,12 +57,14 @@ public class ConverterServlet extends HttpServlet {
       uploadedFile = request.getPart(PART_NAME);
     } catch (IllegalStateException tooLarge) {
       // The container refuses a file or a request larger than what web.xml allows.
-      response.sendError(
-          HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, "The uploaded document is too large");
+      refuse(
+          response,
+          HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE,
+          "The uploaded document is too large");
       return;
     }
     if (uploadedFile == null || uploadedFile.getSize() == 0) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No document was uploaded");
+      refuse(response, HttpServletResponse.SC_BAD_REQUEST, "No document was uploaded");
       return;
     }
 
@@ -80,8 +82,10 @@ public class ConverterServlet extends HttpServlet {
             ? null
             : converter.getFormatRegistry().getFormatByExtension(outputExtension);
     if (outputFormat == null) {
-      response.sendError(
-          HttpServletResponse.SC_BAD_REQUEST, "The output format is missing or not supported");
+      refuse(
+          response,
+          HttpServletResponse.SC_BAD_REQUEST,
+          "The output format is missing or not supported");
       return;
     }
 
@@ -117,13 +121,31 @@ public class ConverterServlet extends HttpServlet {
           inputFile.length(),
           outputFormat.getExtension(),
           exception);
-      response.sendError(
-          HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The document could not be converted");
+      // Drops the headers of the converted file, when the failure came after they were set.
+      if (!response.isCommitted()) {
+        response.reset();
+      }
+      refuse(
+          response,
+          HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+          "The document could not be converted");
     } finally {
       FileUtils.deleteQuietly(outputFile);
       FileUtils.deleteQuietly(inputFile);
       uploadedFile.delete();
     }
+  }
+
+  // Answers an error status with a short message as plain text, which the page shows. The
+  // messages are constants: nothing of the request or of the exception goes into them.
+  private static void refuse(
+      final HttpServletResponse response, final int status, final String message)
+      throws IOException {
+
+    response.setStatus(status);
+    response.setContentType("text/plain");
+    response.setCharacterEncoding("UTF-8");
+    response.getWriter().write(message);
   }
 
   // The name of the converted file comes from the request (the name of the uploaded file and the

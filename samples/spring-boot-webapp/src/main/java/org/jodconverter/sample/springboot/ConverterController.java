@@ -14,11 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import org.jodconverter.core.DocumentConverter;
 import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
@@ -43,8 +46,7 @@ public class ConverterController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConverterController.class);
 
-  private static final String ATTRNAME_ERROR_MESSAGE = "errorMessage";
-  private static final String ON_ERROR_REDIRECT = "redirect:/";
+  private static final MediaType TEXT = new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8);
 
   private final DocumentConverter converter;
   private final OfficeManager officeManager;
@@ -80,11 +82,11 @@ public class ConverterController {
    * @param pdfPreset The PDF options to start from, when the output is a PDF document: archive,
    *     accessible or compact.
    * @param pageRange The pages to export, such as 1-3, when the output is a PDF document.
-   * @param redirectAttributes Model that contains attributes
-   * @return The converted file, or the error redirection if an error occurs.
+   * @return The converted file, or an error status with a message as plain text, which the page
+   *     shows.
    */
   @PostMapping("/converter")
-  /* default */ Object convert(
+  /* default */ ResponseEntity<?> convert(
       @RequestParam("inputFile") final MultipartFile inputFile,
       @RequestParam(name = "outputFormat", required = false) final String outputFormat,
       @RequestParam(name = "password", required = false) final String password,
@@ -92,27 +94,20 @@ public class ConverterController {
       @RequestParam(name = "removeHeaderFooter", defaultValue = "false")
           final boolean removeHeaderFooter,
       @RequestParam(name = "pdfPreset", required = false) final String pdfPreset,
-      @RequestParam(name = "pageRange", required = false) final String pageRange,
-      final RedirectAttributes redirectAttributes) {
+      @RequestParam(name = "pageRange", required = false) final String pageRange) {
 
     if (inputFile.isEmpty()) {
-      redirectAttributes.addFlashAttribute(
-          ATTRNAME_ERROR_MESSAGE, "Please select a file to upload.");
-      return ON_ERROR_REDIRECT;
+      return error(HttpStatus.BAD_REQUEST, "Please select a file to upload.");
     }
 
     if (StringUtils.isBlank(outputFormat)) {
-      redirectAttributes.addFlashAttribute(
-          ATTRNAME_ERROR_MESSAGE, "Please select an output format.");
-      return ON_ERROR_REDIRECT;
+      return error(HttpStatus.BAD_REQUEST, "Please select an output format.");
     }
 
     final DocumentFormat targetFormat =
         converter.getFormatRegistry().getFormatByExtension(outputFormat);
     if (targetFormat == null) {
-      redirectAttributes.addFlashAttribute(
-          ATTRNAME_ERROR_MESSAGE, "The output format is not supported.");
-      return ON_ERROR_REDIRECT;
+      return error(HttpStatus.BAD_REQUEST, "The output format is not supported.");
     }
 
     // Here, we could have a dedicated service that would convert document
@@ -152,14 +147,28 @@ public class ConverterController {
 
     } catch (IllegalArgumentException e) {
       // Options that cannot be used together, or a page range that is not one.
-      redirectAttributes.addFlashAttribute(
-          ATTRNAME_ERROR_MESSAGE, "These options cannot be used: " + e.getMessage());
+      return error(HttpStatus.BAD_REQUEST, "These options cannot be used: " + e.getMessage());
     } catch (OfficeException | IOException e) {
-      redirectAttributes.addFlashAttribute(
-          ATTRNAME_ERROR_MESSAGE, errorMessage(inputFile, StringUtils.isNotBlank(password), e));
+      return conversionError(inputFile, StringUtils.isNotBlank(password), e);
     }
+  }
 
-    return ON_ERROR_REDIRECT;
+  // The upload is refused before the conversion is called: these answer as the conversion does,
+  // with a message that the page shows.
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  /* default */ ResponseEntity<String> tooLarge() {
+    return error(HttpStatus.CONTENT_TOO_LARGE, "The document is too large.");
+  }
+
+  @ExceptionHandler({MultipartException.class, MissingServletRequestPartException.class})
+  /* default */ ResponseEntity<String> notAnUpload() {
+    return error(HttpStatus.BAD_REQUEST, "Please select a file to upload.");
+  }
+
+  // An error status with its message, as plain text: the page writes it as text, never as HTML,
+  // since it may hold the name of the uploaded file.
+  private static ResponseEntity<String> error(final HttpStatus status, final String message) {
+    return ResponseEntity.status(status).contentType(TEXT).body(message);
   }
 
   // The converter of the starter does the plain conversions. Filters belong to a converter, not
@@ -239,7 +248,7 @@ public class ConverterController {
 
   // What the user is told: the reason when it is about the password, which the user can fix, and
   // otherwise that the conversion failed. The details are for the log.
-  private static String errorMessage(
+  private static ResponseEntity<String> conversionError(
       final MultipartFile inputFile, final boolean withPassword, final Exception exception) {
 
     LOGGER.error("Could not convert {}", inputFile.getOriginalFilename(), exception);
@@ -247,15 +256,19 @@ public class ConverterController {
     for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
       if (cause instanceof PasswordProtectedException) {
         // The message of the exception says whether the password was missing or wrong.
-        return String.valueOf(cause.getMessage()).startsWith("Wrong password")
-            ? "The password is not the one of the document."
-            : "The document is protected: give its password in the options.";
+        return error(
+            HttpStatus.BAD_REQUEST,
+            String.valueOf(cause.getMessage()).startsWith("Wrong password")
+                ? "The password is not the one of the document."
+                : "The document is protected: give its password in the options.");
       }
     }
     // The office does not always say that a password is wrong: with some documents it only
     // fails to open them.
-    return "Could not convert the file "
-        + inputFile.getOriginalFilename()
-        + (withPassword ? ". If it is protected, check its password." : ".");
+    return error(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Could not convert the file "
+            + inputFile.getOriginalFilename()
+            + (withPassword ? ". If it is protected, check its password." : "."));
   }
 }

@@ -29,21 +29,15 @@
 
     <hr class="mb-4"/>
 
-    <!-- The message of the server is written by Thymeleaf as text (th:text escapes it): it holds the
-         name of the uploaded file, which must never reach the page as HTML or as script. -->
-    <div id="errorMessage">
-        <div th:if="${errorMessage != null and errorMessage != ''}"
-             class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error!</strong> <span th:text="${errorMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
+    <!-- Where the script of the page shows the message of the server when a conversion fails. -->
+    <div id="errorMessage"></div>
 
     <div class="card">
         <h4 class="card-header">Convert Documents</h4>
         <div class="card-body">
 
-            <form action="/converter" enctype="multipart/form-data" method="post">
+            <!-- The script of the page sends the form and saves the answer (js/converter.js). -->
+            <form id="converterForm" action="/converter" enctype="multipart/form-data" method="post">
 
                 <div class="mb-3">
                     <label for="inputFile" class="form-label">Document</label>

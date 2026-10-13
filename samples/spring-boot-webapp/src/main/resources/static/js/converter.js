@@ -91,3 +91,61 @@ function onInputFileChange() {
     setElementDisabled("formGo", false);
     onOutputFormatChange();
 }
+
+// Saves a file that the page holds, as a download of the browser would.
+function saveFile(blob, filename) {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    // The browser has started to save the file: its content can be released.
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+// Sends the form from the page, instead of letting the browser leave the page for the answer.
+// The page stays where it is: it shows the message of the server when the conversion is refused
+// or fails, and saves the converted document otherwise.
+async function onFormSubmit(event) {
+
+    event.preventDefault();
+    dismissError();
+
+    const form = event.target;
+    const button = document.getElementById("formGo");
+    const buttonText = button.textContent;
+
+    // The converted document is named after the chosen one.
+    const filename = document.getElementById("inputFile").files[0].name;
+    const dot = filename.lastIndexOf(".");
+    const convertedName = (dot > 0 ? filename.substring(0, dot) : filename)
+        + "." + document.getElementById("outputFormat").value;
+
+    // The fields are read before the button is disabled; the fields of a disabled fieldset
+    // (the PDF options, when the output is not a PDF document) are not among them.
+    const body = new FormData(form);
+    button.disabled = true;
+    button.textContent = "Converting...";
+    try {
+        const response = await fetch(form.action, {method: "POST", body: body});
+        if (response.ok) {
+            saveFile(await response.blob(), convertedName);
+        } else {
+            // The server answers an error with a message as plain text.
+            const message = response.headers.get("Content-Type")?.startsWith("text/plain")
+                ? await response.text()
+                : "";
+            showError(message || "The conversion failed (HTTP " + response.status + ").");
+        }
+    } catch (error) {
+        // No answer at all: the server is stopped, or it closed the connection on an upload
+        // that is too large.
+        showError("The server did not answer. Is it running, and is the document under the size limit?");
+    } finally {
+        button.textContent = buttonText;
+        button.disabled = false;
+    }
+}
+
+document.getElementById("converterForm").addEventListener("submit", onFormSubmit);
