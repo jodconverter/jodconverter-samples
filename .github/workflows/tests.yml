@@ -14,7 +14,7 @@ concurrency:
   group: tests-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-# Read-only by default; the job asks for what it needs.
+# Read-only: the job only reads the repository.
 permissions:
   contents: read
 
@@ -22,9 +22,6 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: read
-      checks: write # the test reports are published as checks
 
     steps:
       # The actions are pinned to the commit of a version; Dependabot updates the commit and the
@@ -58,8 +55,9 @@ jobs:
         # --continue: a failing sample does not hide the results of the others.
         run: ./gradlew build --continue
 
-      # The reports are published even when a test failed, which is when they are needed. A pull
-      # request from a fork cannot publish a check: that must not fail the job.
+      # The reports are written to the summary of the run (the default of this version of the
+      # reporter), which needs no permission. They are written even when a test failed, which is
+      # when they are needed, and a report that cannot be made does not fail the job.
       - name: Report (REST)
         uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
         if: always()
