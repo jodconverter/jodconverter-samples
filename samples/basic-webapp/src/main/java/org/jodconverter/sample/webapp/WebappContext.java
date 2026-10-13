@@ -1,9 +1,6 @@
 package org.jodconverter.sample.webapp;
 
-import javax.servlet.ServletContext;
-
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import jakarta.servlet.ServletContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,19 +10,21 @@ import org.jodconverter.core.office.OfficeManager;
 import org.jodconverter.local.LocalConverter;
 import org.jodconverter.local.office.LocalOfficeManager;
 
-/** Web context. */
-@SuppressWarnings("PMD")
+/**
+ * What the web application shares between its requests: one office manager, started with the
+ * application and stopped with it, and one converter. The office manager takes care of the
+ * requests that arrive together.
+ */
 public class WebappContext {
 
   private static final String PARAMETER_OFFICE_PORT = "office.port";
   private static final String PARAMETER_OFFICE_HOME = "office.home";
   private static final String PARAMETER_OFFICE_PROFILE = "office.profile";
-  private static final String PARAMETER_FILEUPLOAD_FILE_SIZE_MAX = "fileupload.fileSizeMax";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WebappContext.class);
+
   private static final String KEY = WebappContext.class.getName();
 
-  private final ServletFileUpload fileUpload;
   private final OfficeManager officeManager;
   private final DocumentConverter documentConverter;
 
@@ -36,39 +35,47 @@ public class WebappContext {
    *     document converter.
    */
   public WebappContext(final ServletContext servletContext) {
-    final DiskFileItemFactory fileItemFactory = new DiskFileItemFactory();
-    final String fileSizeMax = servletContext.getInitParameter(PARAMETER_FILEUPLOAD_FILE_SIZE_MAX);
-    fileUpload = new ServletFileUpload(fileItemFactory);
-    if (fileSizeMax == null) {
-      LOGGER.warn("max file upload size not set");
-    } else {
-      fileUpload.setFileSizeMax(Integer.parseInt(fileSizeMax));
-      LOGGER.info("max file upload size set to {}", fileSizeMax);
-    }
 
     final LocalOfficeManager.Builder builder = LocalOfficeManager.builder();
+
+    // The context parameters of web.xml, all optional: without them, the office is looked for in
+    // its usual locations and started on the default port, with a new profile.
     final String officePortParam = servletContext.getInitParameter(PARAMETER_OFFICE_PORT);
     if (officePortParam != null) {
       builder.portNumbers(Integer.parseInt(officePortParam));
     }
-    final String officeHomeParam = servletContext.getInitParameter(PARAMETER_OFFICE_HOME);
-    builder.officeHome(officeHomeParam);
-    final String officeProfileParam = servletContext.getInitParameter(PARAMETER_OFFICE_PROFILE);
-    builder.templateProfileDir(officeProfileParam);
+    builder.officeHome(servletContext.getInitParameter(PARAMETER_OFFICE_HOME));
+    builder.templateProfileDir(servletContext.getInitParameter(PARAMETER_OFFICE_PROFILE));
 
     officeManager = builder.build();
     documentConverter = LocalConverter.make(officeManager);
   }
 
+  /**
+   * Creates the context of the web application and starts its office manager.
+   *
+   * @param servletContext the servlet context.
+   * @throws OfficeException if the office manager cannot be started.
+   */
   protected static void init(final ServletContext servletContext) throws OfficeException {
     final WebappContext instance = new WebappContext(servletContext);
     servletContext.setAttribute(KEY, instance);
     instance.officeManager.start();
+    LOGGER.info("Office manager started");
   }
 
+  /**
+   * Stops the office manager of the web application.
+   *
+   * @param servletContext the servlet context.
+   * @throws OfficeException if the office manager cannot be stopped.
+   */
   protected static void destroy(final ServletContext servletContext) throws OfficeException {
     final WebappContext instance = get(servletContext);
-    instance.officeManager.stop();
+    if (instance != null) {
+      instance.officeManager.stop();
+      LOGGER.info("Office manager stopped");
+    }
   }
 
   /**
@@ -82,18 +89,9 @@ public class WebappContext {
   }
 
   /**
-   * Gets the object used to process file uploads.
+   * Gets the office manager of the context.
    *
-   * @return a ServletFileUpload.
-   */
-  public ServletFileUpload getFileUpload() {
-    return fileUpload;
-  }
-
-  /**
-   * Gets the document converter of the context.
-   *
-   * @return the context's document converter.
+   * @return the context's office manager.
    */
   public OfficeManager getOfficeManager() {
     return officeManager;
