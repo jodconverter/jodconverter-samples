@@ -23,6 +23,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import org.jodconverter.core.util.FileUtils;
+import org.jodconverter.core.util.OSUtils;
 import org.jodconverter.local.office.LocalOfficeUtils;
 
 /**
@@ -52,8 +53,16 @@ class ConverterControllerTest {
     }
     profile = Files.createTempDirectory("attached-sample-profile").toFile();
 
+    // The launcher of the office, as the container starts it: on Linux, program/soffice restarts
+    // the office when its first start with a new profile ends with the exit code 81, which the
+    // office binary that JODConverter starts itself (program/soffice.bin) does not. On Windows and
+    // macOS, the executable that JODConverter uses is that launcher.
+    final File home = LocalOfficeUtils.getDefaultOfficeHome();
+    final File launcher = new File(home, "program/soffice");
     final File executable =
-        LocalOfficeUtils.getOfficeExecutable(LocalOfficeUtils.getDefaultOfficeHome());
+        !OSUtils.IS_OS_WINDOWS && launcher.isFile()
+            ? launcher
+            : LocalOfficeUtils.getOfficeExecutable(home);
     office =
         new ProcessBuilder(
                 executable.getAbsolutePath(),
