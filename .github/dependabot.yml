@@ -20,6 +20,12 @@ updates:
           - "minor"
           - "patch"
 
+  # The conversion server of the remote sample (compose.yaml).
+  - package-ecosystem: "docker-compose"
+    directory: "/samples/spring-boot-remote"
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

@@ -45,6 +45,7 @@ junit = "6.1.3"
 [libraries]
 
 jodconverter-local-lo = { module = "org.jodconverter:jodconverter-local-lo", version.ref = "jodconverter" }
+jodconverter-remote = { module = "org.jodconverter:jodconverter-remote", version.ref = "jodconverter" }
 jodconverter-spring-boot-starter = { module = "org.jodconverter:jodconverter-spring-boot-starter", version.ref = "jodconverter" }
 
 # The BOM of Spring Boot gives their versions to the libraries below that have none: each build
