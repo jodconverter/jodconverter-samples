@@ -20,6 +20,12 @@ updates:
           - "minor"
           - "patch"
 
+  # The base image of the office of the attached sample (office/Dockerfile).
+  - package-ecosystem: "docker"
+    directory: "/samples/spring-boot-attached/office"
+    schedule:
+      interval: "weekly"
+
   # The conversion server of the remote sample (compose.yaml).
   - package-ecosystem: "docker-compose"
     directory: "/samples/spring-boot-remote"
