@@ -9,14 +9,15 @@ Welcome! Here you will find sample projects using [JODConverter](https://github.
 
 The projects in this directory demonstrate typical use cases using the JODConverter project. They include:
 
-- [`samples/basic-webapp`](./samples//basic-webapp): Demonstrates how to use the [jodconverter-local-lo](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-local-lo) module to build a basic web application.
-- [`samples/spring-boot-rest`](./samples//spring-boot-rest): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a REST API supporting document conversions.
-- [`samples/spring-boot-webapp`](./samples//spring-boot-webapp): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a web application with bootstrap.
-- [`samples/spring-boot-remote`](./samples//spring-boot-remote): Demonstrates how to use the [jodconverter-remote](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-remote) module to convert with a Collabora Online server, without an office beside the application.
+- [`samples/basic-webapp`](./samples/basic-webapp): Demonstrates how to use the [jodconverter-local-lo](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-local-lo) module to build a basic web application.
+- [`samples/spring-boot-rest`](./samples/spring-boot-rest): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a REST API supporting document conversions.
+- [`samples/spring-boot-webapp`](./samples/spring-boot-webapp): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a web application with bootstrap.
+- [`samples/spring-boot-remote`](./samples/spring-boot-remote): Demonstrates how to use the [jodconverter-remote](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-remote) module to convert with a Collabora Online server, without an office beside the application.
+- [`samples/spring-boot-attached`](./samples/spring-boot-attached): Demonstrates how to use the attached office manager of the [jodconverter-local](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-local) module to convert with a LibreOffice that runs in a container, which the application does not start.
 
 ## Requirements
 
-The samples use JODConverter 5.1, which needs Java 17 or later; the Spring Boot samples use Spring Boot 4. LibreOffice (or Apache OpenOffice) must be installed, except for the remote sample, which needs Docker for its conversion server instead.
+The samples use JODConverter 5.1, which needs Java 17 or later; the Spring Boot samples use Spring Boot 4. LibreOffice (or Apache OpenOffice) must be installed, except for the remote and attached samples, which need Docker for their conversion server or office instead.
 
 ## Build and run
 

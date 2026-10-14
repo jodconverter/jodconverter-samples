@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+      # The upload is read when the controller asks for it: an upload that is too large is then
+      # answered by the controller, with a message.
+      resolve-lazily: true
+  application:
+    name: JODConverter Sample Attached Office
+
+jodconverter:
+  # Only the attached manager: the application connects to an office process that it does not
+  # start, stop nor restart (it was the "external" manager before JODConverter 5.0).
+  attached:
+    enabled: true
+    # The office process of compose.yaml listens on port 2012 of this machine; elsewhere, give its
+    # address with the OFFICE_HOST and OFFICE_PORT environment variables.
+    host-name: ${OFFICE_HOST:127.0.0.1}
+    port-numbers: ${OFFICE_PORT:2012}
+    # The office runs in a container and does not see the files of the application: the documents
+    # are sent through the connection, and the converted ones come back through it. It is what the
+    # default (auto) does with an attached manager; it is written here to be seen.
+    load-document-mode: remote
+    # How long the application waits for the office at startup, and between two attempts.
+    connect-timeout: 60s
+    connect-retry-interval: 1s
