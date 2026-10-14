@@ -11,11 +11,12 @@ The projects in this directory demonstrate typical use cases using the JODConver
 
 - [`samples/basic-webapp`](./samples//basic-webapp): Demonstrates how to use the [jodconverter-local-lo](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-local-lo) module to build a basic web application.
 - [`samples/spring-boot-rest`](./samples//spring-boot-rest): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a REST API supporting document conversions.
-- [`samples/spring-boot-webapp`](./samples//spring-boot-webapp): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a web application with thymeleaf and bootstrap.
+- [`samples/spring-boot-webapp`](./samples//spring-boot-webapp): Demonstrates how to use the [jodconverter-spring-boot-starter](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-spring-boot-starter) module to build a web application with bootstrap.
+- [`samples/spring-boot-remote`](./samples//spring-boot-remote): Demonstrates how to use the [jodconverter-remote](https://github.com/jodconverter/jodconverter/tree/master/jodconverter-remote) module to convert with a Collabora Online server, without an office beside the application.
 
 ## Requirements
 
-The samples use JODConverter 5.1, which needs Java 17 or later; the two Spring Boot samples use Spring Boot 4. LibreOffice (or Apache OpenOffice) must be installed.
+The samples use JODConverter 5.1, which needs Java 17 or later; the Spring Boot samples use Spring Boot 4. LibreOffice (or Apache OpenOffice) must be installed, except for the remote sample, which needs Docker for its conversion server instead.
 
 ## Build and run
 

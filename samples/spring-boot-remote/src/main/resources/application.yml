@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+      # The upload is read when the controller asks for it: an upload that is too large is then
+      # answered by the controller, with a message.
+      resolve-lazily: true
+  application:
+    name: JODConverter Sample Remote Conversion
+
+jodconverter:
+  # Only the remote module: no office is started by this application.
+  remote:
+    enabled: true
+    # The conversion server: a Collabora Online server, whose convert-to service is under /cool/
+    # (it was /lool/ with LibreOffice Online). compose.yaml starts one on this address; elsewhere,
+    # give the address with the CONVERSION_SERVER_URL environment variable.
+    url: ${CONVERSION_SERVER_URL:http://localhost:9980/cool/}
+    # How many conversions are sent to the server at the same time; the others wait in the queue.
+    pool-size: 2
+    # How long the server may take to answer before the conversion fails.
+    socket-timeout: 2m

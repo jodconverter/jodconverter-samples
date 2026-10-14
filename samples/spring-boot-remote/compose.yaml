@@ -1,0 +1,18 @@
+# The conversion server of the sample: Collabora Online Development Edition (CODE).
+#
+#   docker compose up -d      starts it on http://localhost:9980
+#   docker compose down       stops it
+#
+# The sample only uses its convert-to service (http://localhost:9980/cool/convert-to/<format>).
+services:
+  collabora:
+    # A fixed version, that Dependabot keeps current.
+    image: collabora/code:26.04.5.1.1
+    ports:
+      # Published on this machine only: the service converts for whoever can reach it.
+      - "127.0.0.1:9980:9980"
+    environment:
+      # Plain HTTP, which is fine on one machine. Over a network, keep the TLS of the server (or
+      # put it behind a proxy that has it) and use the jodconverter.remote.ssl.* properties.
+      extra_params: "--o:ssl.enable=false"
+    restart: unless-stopped
