@@ -60,6 +60,24 @@ http://localhost:8080/info
 
 This is the `OfficeInfoTask` of JODConverter. The application asks the office once and keeps the answer.
 
+### Previews and slide images
+
+Two endpoints make images of documents, for thumbnails or a preview before a download:
+
+```
+POST http://localhost:8080/preview          data=<document>  [width=320]
+POST http://localhost:8080/pages            data=<presentation or drawing>  [width=320] [format=png] [pages=1-3,7]
+```
+
+`/preview` answers a PNG image of the first page of any document (text, spreadsheet, presentation, drawing), of the given width; the height keeps the proportions of the page. The office draws the page at its own size, and the application scales the image: the export filters of the office need the width and the height together, and the height is only known once the page is drawn.
+
+`/pages` answers a ZIP file with one image per slide of a presentation, or per page of a drawing (`page-1.png`, `page-2.png`...), in PNG, JPEG (`jpg`), SVG or WebP. It uses the `exportPages` job of the `LocalConverter`, which only exports presentations and drawings; a text document is refused. See [Slides to Images](https://jodconverter.github.io/jodconverter/latest/getting-started/page-images/) in the documentation.
+
+```
+curl -f -o thumbnail.png -F "data=@report.docx" -F width=200 http://localhost:8080/preview
+curl -f -o slides.zip -F "data=@deck.pptx" -F format=jpg http://localhost:8080/pages
+```
+
 ### State of the office processes
 
 The sample includes Spring Boot Actuator, with which the JODConverter starter reports the state of the office processes:
