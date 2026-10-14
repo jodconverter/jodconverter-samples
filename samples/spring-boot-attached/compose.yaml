@@ -1,7 +1,7 @@
 # The office of the sample: LibreOffice in a container, listening for UNO connections; and, with
 # the "app" profile, the application in a container of its own, on the same network.
 #
-#   docker compose up --build -d                  the office alone, on port 2012 of this machine,
+#   docker compose up --build -d                  the office alone, on port 2050 of this machine,
 #                                                 for the application run with gradlew bootRun
 #   docker compose --profile app up --build -d    the office and the application, which connects
 #                                                 to the office by its name, "office"; build the
@@ -13,10 +13,11 @@ services:
     image: jodconverter-sample-office
     ports:
       # For the application run on this machine (gradlew bootRun). Published on this machine
-      # only, and on 2012 rather than 2002: the other samples and the tests of JODConverter start
-      # offices of their own on 2002 and 2003. Whoever can connect to this port controls the
-      # office; the application of the "app" profile does not need it.
-      - "127.0.0.1:2012:2002"
+      # only, and on 2050 rather than 2002: the other samples start offices of their own on 2002
+      # and 2003, and the tests of JODConverter on ports from 2001 to 2016 and on 2099. Whoever can
+      # connect to this port controls the office; the application of the "app" profile does not
+      # need it.
+      - "127.0.0.1:2050:2002"
     # JODConverter does not restart an office it did not start: the container is restarted when
     # the office exits, and the application reconnects.
     restart: unless-stopped
