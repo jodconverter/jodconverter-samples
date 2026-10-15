@@ -17,10 +17,10 @@ jodconverter:
   # start, stop nor restart (it was the "external" manager before JODConverter 5.0).
   attached:
     enabled: true
-    # The office process of compose.yaml listens on port 2012 of this machine; elsewhere, give its
+    # The office process of compose.yaml listens on port 2050 of this machine; elsewhere, give its
     # address with the OFFICE_HOST and OFFICE_PORT environment variables.
     host-name: ${OFFICE_HOST:127.0.0.1}
-    port-numbers: ${OFFICE_PORT:2012}
+    port-numbers: ${OFFICE_PORT:2050}
     # The office runs in a container and does not see the files of the application: the documents
     # are sent through the connection, and the converted ones come back through it. It is what the
     # default (auto) does with an attached manager; it is written here to be seen.
