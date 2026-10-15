@@ -172,13 +172,11 @@ class ConverterControllerTest {
     assertThat(refused.statusCode()).isEqualTo(400);
     assertThat(text(refused)).isEqualTo("The document is protected: give its password.");
 
-    // With a wrong one, the conversion fails, and the answer mentions the password. Whether it
-    // is a 400 or a 500 depends on what the office reports: that the password is wrong, or only
-    // that the document could not be opened.
+    // With a wrong one, the answer says that the password is wrong.
     final HttpResponse<byte[]> wrong =
         post("/lool/convert-to/pdf?password=wrong", "secret.odt", document);
-    assertThat(wrong.statusCode()).isIn(400, 500);
-    assertThat(text(wrong)).contains("password");
+    assertThat(wrong.statusCode()).isEqualTo(400);
+    assertThat(text(wrong)).isEqualTo("The password is not the one of the document.");
   }
 
   @Test

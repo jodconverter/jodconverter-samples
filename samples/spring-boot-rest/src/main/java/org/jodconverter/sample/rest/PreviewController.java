@@ -43,6 +43,7 @@ import org.jodconverter.core.office.OfficeManager;
 import org.jodconverter.core.util.FileUtils;
 import org.jodconverter.local.ImageFormat;
 import org.jodconverter.local.LocalConverter;
+import org.jodconverter.local.office.PageOutOfRangeException;
 
 /**
  * Makes images of documents: a preview of the first page of any document, and an image of each
@@ -214,12 +215,17 @@ public class PreviewController {
         } catch (IllegalArgumentException e) {
             // A range of pages that is not one.
             return error(HttpStatus.BAD_REQUEST, "These options cannot be used: " + e.getMessage());
-        } catch (OfficeException e) {
+        } catch (PageOutOfRangeException e) {
             // A page beyond the last one is only known once the office has loaded the document,
-            // and it is the request that is wrong: its message says how many pages there are.
-            if (String.valueOf(e.getMessage()).contains("does not exist: the document has")) {
-                return error(HttpStatus.BAD_REQUEST, e.getMessage() + ".");
-            }
+            // and it is the request that is wrong: the answer says how many pages there are.
+            return error(
+                    HttpStatus.BAD_REQUEST,
+                    "Page "
+                            + e.getPage()
+                            + " does not exist: the document has "
+                            + e.getPageCount()
+                            + " pages.");
+        } catch (OfficeException e) {
             LOGGER.error("Could not export the pages of {}", document.getOriginalFilename(), e);
             return error(HttpStatus.INTERNAL_SERVER_ERROR, "The images could not be made.");
         } catch (IOException e) {
