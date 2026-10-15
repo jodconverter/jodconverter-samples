@@ -275,14 +275,8 @@ class ConverterControllerTest {
     // Without it, or with a wrong one, the answer is a message that says which.
     assertThat(message(post("secret.odt", document, "outputFormat", "pdf"), 400))
         .isEqualTo("The document is protected: give its password in the options.");
-    final HttpResponse<byte[]> wrong =
-        post("secret.odt", document, "outputFormat", "pdf", "password", "wrong");
-    assertThat(new String(wrong.body(), StandardCharsets.UTF_8))
-        .containsAnyOf(
-            // What the answer says depends on what the office reports for a wrong password: that
-            // it is wrong (400), or only that the document could not be opened (500).
-            "The password is not the one of the document.",
-            "If it is protected, check its password.");
-    assertThat(wrong.statusCode()).isIn(400, 500);
+    assertThat(
+            message(post("secret.odt", document, "outputFormat", "pdf", "password", "wrong"), 400))
+        .isEqualTo("The password is not the one of the document.");
   }
 }

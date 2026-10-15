@@ -242,13 +242,7 @@ public class ConverterController {
             LOGGER.error("Could not convert {}", inputFile.getOriginalFilename(), ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.TEXT_PLAIN)
-                    .body(
-                            // The office does not always say that a password is wrong: with
-                            // some documents it only fails to open them.
-                            StringUtils.isNotBlank(password)
-                                    ? "The document could not be converted."
-                                            + " If it is protected, check its password."
-                                    : "The document could not be converted.");
+                    .body("The document could not be converted.");
         }
     }
 

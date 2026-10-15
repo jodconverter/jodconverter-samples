@@ -7,7 +7,7 @@
 java = "17"
 
 # Latest version -> https://central.sonatype.com/artifact/org.jodconverter/jodconverter-core
-jodconverter = "5.1.0"
+jodconverter = "5.1.1"
 
 # The Spring Boot line that the starter of JODConverter is built for.
 # Latest version -> https://central.sonatype.com/artifact/org.springframework.boot/spring-boot

@@ -145,7 +145,7 @@ public class ConverterController {
       // Options that cannot be used together, or a page range that is not one.
       return error(HttpStatus.BAD_REQUEST, "These options cannot be used: " + e.getMessage());
     } catch (OfficeException | IOException e) {
-      return conversionError(inputFile, StringUtils.isNotBlank(password), e);
+      return conversionError(inputFile, e);
     }
   }
 
@@ -245,7 +245,7 @@ public class ConverterController {
   // What the user is told: the reason when it is about the password, which the user can fix, and
   // otherwise that the conversion failed. The details are for the log.
   private static ResponseEntity<String> conversionError(
-      final MultipartFile inputFile, final boolean withPassword, final Exception exception) {
+      final MultipartFile inputFile, final Exception exception) {
 
     LOGGER.error("Could not convert {}", inputFile.getOriginalFilename(), exception);
 
@@ -259,12 +259,8 @@ public class ConverterController {
                 : "The document is protected: give its password in the options.");
       }
     }
-    // The office does not always say that a password is wrong: with some documents it only
-    // fails to open them.
     return error(
         HttpStatus.INTERNAL_SERVER_ERROR,
-        "Could not convert the file "
-            + inputFile.getOriginalFilename()
-            + (withPassword ? ". If it is protected, check its password." : "."));
+        "Could not convert the file " + inputFile.getOriginalFilename() + ".");
   }
 }
