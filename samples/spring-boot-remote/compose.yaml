@@ -7,7 +7,7 @@
 services:
   collabora:
     # A fixed version, that Dependabot keeps current.
-    image: collabora/code:26.04.5.1.1
+    image: collabora/code:26.04.5.2.1
     ports:
       # Published on this machine only: the service converts for whoever can reach it.
       - "127.0.0.1:9980:9980"
