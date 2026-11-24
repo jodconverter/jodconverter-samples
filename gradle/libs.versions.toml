@@ -11,17 +11,17 @@ jodconverter = "5.1.1"
 
 # The Spring Boot line that the starter of JODConverter is built for.
 # Latest version -> https://central.sonatype.com/artifact/org.springframework.boot/spring-boot
-spring-boot = "4.1.1"
+spring-boot = "4.2.0"
 
 # Latest version -> https://central.sonatype.com/artifact/commons-io/commons-io
 commons-io = "2.22.0"
 
 # The line of springdoc for Spring Boot 4.
 # Latest version -> https://central.sonatype.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-springdoc = "3.1.1"
+springdoc = "3.2.1"
 
 # Latest version -> https://central.sonatype.com/artifact/io.swagger.core.v3/swagger-annotations
-swagger = "2.2.55"
+swagger = "2.2.56"
 
 # Latest version -> https://central.sonatype.com/artifact/org.slf4j/slf4j-api
 slf4j = "2.0.20"
@@ -31,7 +31,7 @@ slf4j = "2.0.20"
 # The embedded server that runs the web application (the run task and the test). Tomcat 11
 # implements Jakarta Servlet 6.1.
 # Latest version -> https://central.sonatype.com/artifact/org.apache.tomcat.embed/tomcat-embed-core
-tomcat = "11.0.27"
+tomcat = "11.0.29"
 
 # The API the web application is written for; the servlet container provides it.
 # Latest version -> https://central.sonatype.com/artifact/jakarta.servlet/jakarta.servlet-api
